@@ -273,13 +273,26 @@ function ShopContent() {
                 type="button"
                 aria-pressed={mode === "solo"}
                 onClick={() => setMode("solo")}
-                className={`overflow-hidden rounded-2xl p-6 text-left transition-all duration-300 ${
+                className={`relative overflow-hidden rounded-2xl p-6 text-left transition-all duration-300 ${
                   mode === "solo"
                     ? "border-2 border-black bg-black text-white outward-3d"
                     : "border-2 border-black/15 bg-white text-slate-900 shadow-sm hover:border-black/40"
                 }`}
               >
-                <div className="flex items-start justify-between">
+                {/* Big Full Box Sweeping Overlay Rupee Coin */}
+                {mode === "solo" && (
+                  <video
+                    key="big-solo-coin"
+                    src="/rupee-coin.webm"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="animate-big-coin-l-to-r pointer-events-none absolute top-1/2 left-0 h-32 w-32 rounded-full object-cover shadow-2xl border-2 border-amber-300/40 z-10"
+                  />
+                )}
+
+                <div className="relative z-20 flex items-start justify-between">
                   <span
                     className={`oval-pill-btn text-[10px] ${
                       mode === "solo"
@@ -292,7 +305,7 @@ function ShopContent() {
 
                   {mode === "solo" ? (
                     <video
-                      key="solo-coin"
+                      key="solo-coin-badge"
                       src="/rupee-coin.webm"
                       autoPlay
                       loop
@@ -307,12 +320,12 @@ function ShopContent() {
                   )}
                 </div>
 
-                <h3 className="mt-4 text-lg font-bold">
+                <h3 className="relative z-20 mt-4 text-lg font-bold">
                   Buy for myself
                 </h3>
 
                 <p
-                  className={`mt-1.5 text-xs leading-5 ${
+                  className={`relative z-20 mt-1.5 text-xs leading-5 ${
                     mode === "solo" ? "text-white/75" : "text-black/60"
                   }`}
                 >
@@ -324,13 +337,26 @@ function ShopContent() {
                 type="button"
                 aria-pressed={mode === "group"}
                 onClick={() => setMode("group")}
-                className={`overflow-hidden rounded-2xl p-6 text-left transition-all duration-300 ${
+                className={`relative overflow-hidden rounded-2xl p-6 text-left transition-all duration-300 ${
                   mode === "group"
                     ? "border-2 border-black bg-black text-white outward-3d"
                     : "border-2 border-black/15 bg-white text-slate-900 shadow-sm hover:border-black/40"
                 }`}
               >
-                <div className="flex items-start justify-between">
+                {/* Big Full Box Sweeping Overlay Rupee Coin */}
+                {mode === "group" && (
+                  <video
+                    key="big-group-coin"
+                    src="/rupee-coin.webm"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="animate-big-coin-r-to-l pointer-events-none absolute top-1/2 left-0 h-32 w-32 rounded-full object-cover shadow-2xl border-2 border-amber-300/40 z-10"
+                  />
+                )}
+
+                <div className="relative z-20 flex items-start justify-between">
                   <span
                     className={`oval-pill-btn text-[10px] ${
                       mode === "group"
@@ -343,7 +369,7 @@ function ShopContent() {
 
                   {mode === "group" ? (
                     <video
-                      key="group-coin"
+                      key="group-coin-badge"
                       src="/rupee-coin.webm"
                       autoPlay
                       loop
@@ -358,12 +384,12 @@ function ShopContent() {
                   )}
                 </div>
 
-                <h3 className="mt-4 text-lg font-bold">
+                <h3 className="relative z-20 mt-4 text-lg font-bold">
                   Buy together
                 </h3>
 
                 <p
-                  className={`mt-1.5 text-xs leading-5 ${
+                  className={`relative z-20 mt-1.5 text-xs leading-5 ${
                     mode === "group" ? "text-white/75" : "text-black/60"
                   }`}
                 >
