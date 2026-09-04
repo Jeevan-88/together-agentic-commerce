@@ -137,12 +137,63 @@ html.accessible-mode :focus-visible {
 
 /* Outward 3D Depth for Cards and Mode Selection */
 .outward-3d {
-  box-shadow: 0 6px 18px -2px rgba(0, 0, 0, 0.25), 0 2px 6px -1px rgba(0, 0, 0, 0.15), inset 0 1px 0 0 rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 24px -2px rgba(0, 0, 0, 0.3), 0 3px 8px -1px rgba(0, 0, 0, 0.2), inset 0 1px 0 0 rgba(255, 255, 255, 0.25);
 }
 
 /* Inward 3D Pressed Depth for Action Buttons */
 .inward-3d {
   box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.35), inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Soft Inward Bump Button */
+.soft-inward-btn {
+  border-radius: 9999px;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25), inset 0 -1px 2px rgba(255, 255, 255, 0.15), 0 2px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.soft-inward-btn:hover {
+  box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.35), inset 0 -1px 2px rgba(255, 255, 255, 0.25), 0 4px 12px rgba(0, 0, 0, 0.18);
+  transform: translateY(-1px);
+}
+
+/* Rupee Coin Sliding Keyframes */
+@keyframes coin-slide-l-to-r {
+  0% {
+    transform: translateX(-120px) rotate(-240deg) scale(0.4);
+    opacity: 0;
+  }
+  70% {
+    transform: translateX(8px) rotate(15deg) scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes coin-slide-r-to-l {
+  0% {
+    transform: translateX(120px) rotate(240deg) scale(0.4);
+    opacity: 0;
+  }
+  70% {
+    transform: translateX(-8px) rotate(-15deg) scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-coin-l-to-r {
+  animation: coin-slide-l-to-r 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-coin-r-to-l {
+  animation: coin-slide-r-to-l 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 /* Oval Pill Button Style from user reference */

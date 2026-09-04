@@ -262,7 +262,7 @@ function ShopContent() {
             </div>
           </div>
 
-          {/* Mode Selection with Solid Black Outward 3D and Rupee Coin Video on Select */}
+          {/* Mode Selection with Solid Black Outward 3D and Sliding Rupee Coin Video on Select */}
           <div className="mt-8">
             <h2 className="mb-4 text-center text-xs font-bold uppercase tracking-[0.2em] text-black/55">
               How do you want to buy?
@@ -273,10 +273,10 @@ function ShopContent() {
                 type="button"
                 aria-pressed={mode === "solo"}
                 onClick={() => setMode("solo")}
-                className={`rounded-2xl p-6 text-left transition-all ${
+                className={`overflow-hidden rounded-2xl p-6 text-left transition-all duration-300 ${
                   mode === "solo"
                     ? "border-2 border-black bg-black text-white outward-3d"
-                    : "border-2 border-black/15 bg-white text-slate-900 hover:border-black/40"
+                    : "border-2 border-black/15 bg-white text-slate-900 shadow-sm hover:border-black/40"
                 }`}
               >
                 <div className="flex items-start justify-between">
@@ -292,15 +292,16 @@ function ShopContent() {
 
                   {mode === "solo" ? (
                     <video
+                      key="solo-coin"
                       src="/rupee-coin.webm"
                       autoPlay
                       loop
                       muted
                       playsInline
-                      className="h-7 w-7 rounded-full object-cover shadow-sm"
+                      className="animate-coin-l-to-r h-7 w-7 rounded-full object-cover shadow-md"
                     />
                   ) : (
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full border border-black/20 text-transparent">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full border border-black/20 text-black/30">
                       •
                     </span>
                   )}
@@ -323,10 +324,10 @@ function ShopContent() {
                 type="button"
                 aria-pressed={mode === "group"}
                 onClick={() => setMode("group")}
-                className={`rounded-2xl p-6 text-left transition-all ${
+                className={`overflow-hidden rounded-2xl p-6 text-left transition-all duration-300 ${
                   mode === "group"
                     ? "border-2 border-black bg-black text-white outward-3d"
-                    : "border-2 border-black/15 bg-white text-slate-900 hover:border-black/40"
+                    : "border-2 border-black/15 bg-white text-slate-900 shadow-sm hover:border-black/40"
                 }`}
               >
                 <div className="flex items-start justify-between">
@@ -342,15 +343,16 @@ function ShopContent() {
 
                   {mode === "group" ? (
                     <video
+                      key="group-coin"
                       src="/rupee-coin.webm"
                       autoPlay
                       loop
                       muted
                       playsInline
-                      className="h-7 w-7 rounded-full object-cover shadow-sm"
+                      className="animate-coin-r-to-l h-7 w-7 rounded-full object-cover shadow-md"
                     />
                   ) : (
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full border border-black/20 text-transparent">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full border border-black/20 text-black/30">
                       •
                     </span>
                   )}
@@ -371,7 +373,7 @@ function ShopContent() {
             </div>
           </div>
 
-          {/* Continue Action with Inward 3D Effect */}
+          {/* Continue Action with Soft Inward 3D Effect */}
           <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-black/10 pt-6 sm:flex-row">
             <p className="text-xs font-medium text-black/50">
               {mode === "solo"
@@ -387,10 +389,10 @@ function ShopContent() {
               type="button"
               onClick={handleContinue}
               disabled={!canContinue}
-              className={`oval-pill-btn inward-3d px-10 py-3.5 text-xs font-bold uppercase tracking-wider transition ${
+              className={`oval-pill-btn soft-inward-btn px-10 py-3.5 text-xs font-bold uppercase tracking-wider transition ${
                 canContinue
-                  ? "border-2 border-black bg-black text-white hover:bg-black/90"
-                  : "cursor-not-allowed border-black/10 bg-black/10 text-black/30"
+                  ? "border-2 border-black bg-black text-white"
+                  : "cursor-not-allowed border-black/10 bg-black/10 text-black/30 opacity-50"
               }`}
             >
               Continue to catalog &rarr;
