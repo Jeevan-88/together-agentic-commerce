@@ -74,10 +74,10 @@ function PaymentContent() {
       }
 
       const checkout = new window.Razorpay({
-        key: orderData.keyId,
-        amount: orderData.amountPaise,
-        currency: orderData.currency,
-        name: "TOGETHER",
+  key: orderData.payment.keyId,
+  amount: orderData.payment.amountPaise,
+  currency: orderData.payment.currency,
+  name: "TOGETHER",
         description: "Purchase through TOGETHER",
         order_id: orderData.orderId,
 

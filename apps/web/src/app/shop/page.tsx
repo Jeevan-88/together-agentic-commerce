@@ -11,7 +11,13 @@ export default function ShopPage() {
   const [request, setRequest] = useState("");
   const [mode, setMode] = useState<PurchaseMode>(null);
 
-  const canContinue = request.trim().length > 0 && mode !== null;
+  const canContinue = request.trim().length >= 3 && mode !== null;
+
+  {request.trim().length > 0 && request.trim().length < 3 && (
+  <p className="mt-2 text-sm text-red-600">
+    Please enter at least 3 characters.
+  </p>
+)}
 
   function handleContinue() {
     if (!canContinue || !mode) {
