@@ -39,6 +39,11 @@ type ParsedRequest = {
   capacityLitres?: number;
   maxWeightKg?: number;
   keywords: string[];
+  intents?: {
+    preferCheaper: boolean;
+    preferBestRated: boolean;
+    preferLightweight: boolean;
+  };
 };
 
 function normalizeText(value: string): string {
@@ -185,6 +190,25 @@ function extractKeywords(text: string): string[] {
   ];
 }
 
+function extractIntents(text: string): {
+  preferCheaper: boolean;
+  preferBestRated: boolean;
+  preferLightweight: boolean;
+} {
+  const normalized = normalizeText(text);
+  return {
+    preferCheaper: /\b(cheap|cheaper|cheapest|budget|affordable|low price|lowest price|economic|economical|value)\b/i.test(
+      normalized,
+    ),
+    preferBestRated: /\b(best|best rated|top rated|highest rated|popular|top|rated|five star|5 star)\b/i.test(
+      normalized,
+    ),
+    preferLightweight: /\b(light|lightweight|featherlight|easy to carry|portable|ultralight)\b/i.test(
+      normalized,
+    ),
+  };
+}
+
 function parseRequest(requestText: string): ParsedRequest {
   return {
     budgetPaise: extractBudget(requestText),
@@ -192,6 +216,7 @@ function parseRequest(requestText: string): ParsedRequest {
     capacityLitres: extractCapacity(requestText),
     maxWeightKg: extractWeight(requestText),
     keywords: extractKeywords(requestText),
+    intents: extractIntents(requestText),
   };
 }
 
@@ -340,9 +365,45 @@ function scoreProduct(
     );
   }
 
-  const rating = metadataValue(product.metadata, "rating");
+  const rating =
+    product.rating ??
+    (typeof metadataValue(product.metadata, "rating") === "number"
+      ? (metadataValue(product.metadata, "rating") as number)
+      : undefined);
+
   if (typeof rating === "number") {
     score += Math.round(rating * 3);
+  }
+
+  if (request.intents?.preferCheaper) {
+    const originalPrice =
+      product.originalPricePaise ??
+      metadataValue(product.metadata, "originalPricePaise");
+    if (typeof originalPrice === "number" && originalPrice > product.pricePaise) {
+      score += 20;
+      matchedCriteria.push("high discount value");
+      reasons.push("Prioritized for competitive discount and value pricing.");
+    } else {
+      score += 10;
+      reasons.push("Identified as an economical option for budget-conscious shopping.");
+    }
+  }
+
+  if (request.intents?.preferBestRated) {
+    if (typeof rating === "number" && rating >= 4.7) {
+      score += 25;
+      matchedCriteria.push("top rated");
+      reasons.push(`Ranked highly with an outstanding customer rating (★ ${rating}).`);
+    }
+  }
+
+  if (request.intents?.preferLightweight) {
+    const weight = resolveProductWeight(product.metadata);
+    if (weight !== undefined && weight <= 1.2) {
+      score += 20;
+      matchedCriteria.push("lightweight");
+      reasons.push(`Lightweight construction (${weight}kg) optimized for portable use.`);
+    }
   }
 
   const totalPricePaise = product.pricePaise * request.quantity;

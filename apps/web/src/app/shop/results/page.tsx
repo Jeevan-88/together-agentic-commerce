@@ -62,6 +62,28 @@ function ResultsContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const [selectedForCompare, setSelectedForCompare] = useState<Product[]>([]);
+  const [showCompareModal, setShowCompareModal] = useState(false);
+
+  function toggleCompare(product: Product) {
+    setSelectedForCompare((prev) => {
+      const exists = prev.some((p) => p.id === product.id);
+      if (exists) {
+        return prev.filter((p) => p.id !== product.id);
+      }
+      if (prev.length >= 3) {
+        alert("You can compare up to 3 products at a time.");
+        return prev;
+      }
+      return [...prev, product];
+    });
+  }
+
+  function clearCompare() {
+    setSelectedForCompare([]);
+    setShowCompareModal(false);
+  }
+
   const categories = ["All", "Bags", "Audio", "Wearables", "Footwear", "Tech"];
   const itemsPerPage = 20;
 
@@ -545,12 +567,31 @@ function ResultsContent() {
                       </div>
                     </div>
 
-                    {/* Choose Button in Oval Pill */}
-                    <div className="p-6 pt-0">
+                    {/* Action Buttons: Compare + Choose in Oval Pill */}
+                    <div className="p-6 pt-0 flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => toggleCompare(product)}
+                        aria-pressed={selectedForCompare.some((p) => p.id === product.id)}
+                        className={`oval-pill-btn px-3.5 py-3 text-xs font-bold transition ${
+                          selectedForCompare.some((p) => p.id === product.id)
+                            ? "border-black bg-black text-white shadow-xs"
+                            : "border-black/20 bg-white text-slate-800 hover:border-black hover:bg-black/5"
+                        }`}
+                        title={
+                          selectedForCompare.some((p) => p.id === product.id)
+                            ? "Remove from comparison"
+                            : "Add to comparison (up to 3)"
+                        }
+                      >
+                        {selectedForCompare.some((p) => p.id === product.id)
+                          ? "✓ In Compare"
+                          : "+ Compare"}
+                      </button>
                       <button
                         type="button"
                         onClick={() => handleChoose(product)}
-                        className="oval-pill-btn w-full border-black bg-black py-3 text-xs font-bold text-white shadow-sm transition hover:bg-black/80"
+                        className="oval-pill-btn flex-1 border-black bg-black py-3 text-xs font-bold text-white shadow-sm transition hover:bg-black/80"
                       >
                         Choose this product &rarr;
                       </button>
@@ -604,6 +645,264 @@ function ResultsContent() {
         )}
         </div>
       </div>
+
+      {/* Floating Sticky Comparison Tray */}
+      {selectedForCompare.length > 0 && (
+        <aside
+          aria-label="Product comparison tray"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 rounded-full border border-black/15 bg-white/95 px-5 py-3 shadow-2xl backdrop-blur-md max-w-[95vw] sm:max-w-xl"
+        >
+          <div className="flex items-center gap-2 overflow-x-auto py-0.5">
+            {selectedForCompare.map((p) => (
+              <div
+                key={p.id}
+                className="relative flex items-center gap-1.5 rounded-full border border-black/10 bg-black/5 px-3 py-1 text-xs font-bold text-slate-900"
+              >
+                <span className="max-w-[80px] sm:max-w-[120px] truncate">{p.name}</span>
+                <button
+                  type="button"
+                  onClick={() => toggleCompare(p)}
+                  className="ml-1 text-black/50 hover:text-black font-black"
+                  aria-label={`Remove ${p.name} from comparison`}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2 border-l border-black/10 pl-3">
+            <button
+              type="button"
+              onClick={() => setShowCompareModal(true)}
+              className="oval-pill-btn border-black bg-black px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-black/80 transition"
+            >
+              Compare ({selectedForCompare.length})
+            </button>
+            <button
+              type="button"
+              onClick={clearCompare}
+              className="text-xs text-black/50 hover:text-black font-semibold"
+            >
+              Clear
+            </button>
+          </div>
+        </aside>
+      )}
+
+      {/* Side-by-Side Product Comparison Modal */}
+      {showCompareModal && selectedForCompare.length > 0 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+          <div className="surface-card w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-3xl p-6 sm:p-8 shadow-2xl">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-black/10 pb-4">
+              <div>
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-black/45">
+                  Side-by-Side Comparison
+                </span>
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-950">
+                  Compare Products ({selectedForCompare.length} selected)
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCompareModal(false)}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-black/5 text-sm font-bold text-black/60 hover:bg-black/10 transition"
+                aria-label="Close comparison modal"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Side-by-side Table/Grid */}
+            {(() => {
+              const lowestPrice = Math.min(
+                ...selectedForCompare.map((p) => p.pricePaise)
+              );
+              const highestRating = Math.max(
+                ...selectedForCompare.map(
+                  (p) => p.rating || p.metadata?.rating || 0
+                )
+              );
+
+              return (
+                <div
+                  className={`mt-6 grid gap-6 ${
+                    selectedForCompare.length === 2
+                      ? "grid-cols-1 md:grid-cols-2"
+                      : "grid-cols-1 md:grid-cols-3"
+                  }`}
+                >
+                  {selectedForCompare.map((p) => {
+                    const merchantName =
+                      typeof p.merchant === "string"
+                        ? p.merchant
+                        : p.merchant?.name || "Merchant";
+                    const imageUrl =
+                      p.imageUrl ||
+                      p.metadata?.imageUrl ||
+                      "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&auto=format&fit=crop&q=80";
+                    const originalPricePaise =
+                      p.originalPricePaise ??
+                      p.metadata?.originalPricePaise ??
+                      Math.round(p.pricePaise * 1.3);
+                    const discountPercent =
+                      p.metadata?.discountPercent ??
+                      (originalPricePaise && originalPricePaise > p.pricePaise
+                        ? Math.round(
+                            ((originalPricePaise - p.pricePaise) /
+                              originalPricePaise) *
+                              100
+                          )
+                        : null);
+                    const rating = p.rating || p.metadata?.rating || 4.8;
+                    const reviewsCount =
+                      p.reviewsCount || p.metadata?.reviewsCount || 120;
+                    const category =
+                      p.category || p.metadata?.category || "Commerce";
+                    const capacity =
+                      p.metadata?.capacity ||
+                      (p.metadata?.capacityLitres
+                        ? `${p.metadata.capacityLitres}L`
+                        : undefined);
+                    const weight =
+                      p.metadata?.weight ||
+                      (p.metadata?.weightKg
+                        ? `${p.metadata.weightKg}kg`
+                        : undefined);
+                    const feature = p.metadata?.feature;
+
+                    const isLowestPrice = p.pricePaise === lowestPrice;
+                    const isHighestRated = rating === highestRating;
+
+                    return (
+                      <div
+                        key={p.id}
+                        className="surface-card flex flex-col justify-between rounded-2xl border border-black/10 p-5 shadow-sm"
+                      >
+                        <div className="space-y-4">
+                          {/* Image & Badges */}
+                          <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl bg-slate-100">
+                            <img
+                              src={imageUrl}
+                              alt={p.name}
+                              className="h-full w-full object-cover"
+                            />
+                            <div className="absolute left-2.5 top-2.5 flex flex-wrap gap-1">
+                              {isLowestPrice && (
+                                <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-white shadow-xs">
+                                  Lowest Price
+                                </span>
+                              )}
+                              {isHighestRated && (
+                                <span className="rounded-full bg-amber-600 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-white shadow-xs">
+                                  Top Rated
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Merchant & Title */}
+                          <div>
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-black/50">
+                              {merchantName}
+                            </span>
+                            <h3 className="text-base font-bold text-slate-950 line-clamp-2">
+                              {p.name}
+                            </h3>
+                          </div>
+
+                          {/* Price & Discount */}
+                          <div className="rounded-xl bg-black/5 p-3">
+                            <div className="flex items-baseline gap-2">
+                              <span className="text-xl font-extrabold text-slate-950">
+                                ₹{(p.pricePaise / 100).toLocaleString("en-IN")}
+                              </span>
+                              {originalPricePaise && (
+                                <span className="text-xs text-black/40 line-through">
+                                  ₹
+                                  {(
+                                    originalPricePaise / 100
+                                  ).toLocaleString("en-IN")}
+                                </span>
+                              )}
+                              {discountPercent && (
+                                <span className="rounded-md bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800">
+                                  {discountPercent}% OFF
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Attribute Comparison Rows */}
+                          <div className="space-y-2 text-xs border-t border-black/10 pt-3">
+                            <div className="flex justify-between py-1 border-b border-black/5">
+                              <span className="text-black/50">Rating</span>
+                              <span className="font-semibold text-amber-700">
+                                ★ {rating} ({reviewsCount} reviews)
+                              </span>
+                            </div>
+
+                            <div className="flex justify-between py-1 border-b border-black/5">
+                              <span className="text-black/50">Category</span>
+                              <span className="font-semibold text-slate-900">
+                                {category}
+                              </span>
+                            </div>
+
+                            {capacity && (
+                              <div className="flex justify-between py-1 border-b border-black/5">
+                                <span className="text-black/50">Capacity</span>
+                                <span className="font-semibold text-slate-900">
+                                  {capacity}
+                                </span>
+                              </div>
+                            )}
+
+                            {weight && (
+                              <div className="flex justify-between py-1 border-b border-black/5">
+                                <span className="text-black/50">Weight</span>
+                                <span className="font-semibold text-slate-900">
+                                  {weight}
+                                </span>
+                              </div>
+                            )}
+
+                            {feature && (
+                              <div className="py-1">
+                                <span className="text-black/50 block mb-0.5">
+                                  Key Feature
+                                </span>
+                                <span className="font-medium text-slate-900">
+                                  {feature}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Action Button */}
+                        <div className="pt-5 mt-4 border-t border-black/10">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowCompareModal(false);
+                              handleChoose(p);
+                            }}
+                            className="oval-pill-btn w-full border-black bg-black py-3 text-xs font-bold text-white shadow-sm hover:bg-black/80 transition"
+                          >
+                            Choose this product &rarr;
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
     </main>
   );
 }

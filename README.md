@@ -54,35 +54,29 @@
 
 ---
 
-## Functional Requirements
+## Functional Capabilities
 
-- **Enter a shopping request**: Users state shopping intent via prompt input text or hands-free voice interactions.
-- **Discover and compare products**: Search and filter catalog items across price bounds, specs, and features.
-- **Select a product and review a purchase proposal**: Create a purchase proposal in `DRAFT` state with selected item breakdown.
-- **Create groups and manage members**: Organize shopping groups with defined owners, member lists, and role permissions.
-- **Link a group purchase to a selected group**: Associate a purchase proposal with a specific shopping group circle.
-- **Require approval before payment**: Enforce explicit group/owner approval (`PENDING_PAYMENT`) prior to order generation.
-- **Create payment orders through the server**: Generate Razorpay payment orders strictly via backend API calls (`POST /api/purchases/:id/payment-order`).
-- **Use Razorpay Test Mode for checkout**: Complete transactions using Razorpay Test Mode checkout modals.
-- **Verify payment status through the server**: Securely verify client checkout signatures (`POST /api/purchases/:id/verify-payment`) with fallback server-to-server Razorpay API checks.
-- **Process Razorpay webhook events**: Handle async `payment.captured` and `payment.failed` notifications via `POST /api/webhooks/razorpay`.
-- **Handle duplicate webhook delivery safely**: Deduplicate incoming webhooks by `x-razorpay-event-id` using unique database constraints.
-- **Record purchase activity in the audit log**: Write immutable event logs for every status transition and webhook reconciliation.
-- **Display purchase status**: Present real-time state feedback (`PENDING`, `PAID`, `FAILED`) to buyers and group participants.
+- **Natural Language Shopping Agent**: Interprets natural language shopping requests (e.g., *"cheapest top rated lightweight backpack under 7000"*), accurately parsing budget ceilings, quantities, capacity limits, weight thresholds, and intent modifiers (`cheaper`, `best rated`, `lightweight`).
+- **Database-Driven Catalog**: Real PostgreSQL catalog with structured price in paise, dynamic discount percentages, merchant relationships, ratings, review counts, and metadata specifications.
+- **Side-by-Side Product Comparison**: Compare 2 to 3 products simultaneously on pricing, original price, discounts, ratings, reviews, capacity, weight, and key features, with automatic badges for "Lowest Price" and "Top Rated".
+- **Real Authentication & Sessions**: Password hashing using Node.js `crypto.scrypt` with random salt, database-backed `Session` model, session persistence across page refreshes via `GET /api/auth/me`, and account sign-in / sign-up modal.
+- **Group Shopping Collaboration**: Create shopping groups, manage members with role permissions (`OWNER` vs `MEMBER`), and execute group purchases with group consensus.
+- **Accessibility Mode (A11y)**: High-contrast display mode toggle in header adhering to WCAG focus rings, bold borders, and persistent preference.
+- **Hands-Free Voice Input**: Web Speech API integration feeding dictated prompts directly into intent parsing.
+- **Server-Gated Payment Lifecycle**: Strict state progression `DRAFT` &rarr; `PENDING_PAYMENT` (via explicit approval) &rarr; `PAID` / `FAILED`. Razorpay order amounts are computed strictly from database prices in paise, never trusted from the client.
+- **Dual Payment Verification & Resilient Fallback**: Signature HMAC SHA256 verification with server-to-server Razorpay API fetch fallback handling test-mode order ID edge cases.
+- **Asynchronous Webhook Reconciliation**: Idempotent webhook processing (`payment.captured`, `payment.failed`) deduplicated by `x-razorpay-event-id`.
+- **Immutable Cryptographic Audit Trail**: Every stage of the purchase lifecycle, approval, payment order creation, verification, and webhook settlement is permanently recorded in PostgreSQL.
 
 ---
 
-## Reliability and Security Requirements
+## Reliability and Security Architecture
 
-- **Validate request data on the server**: Enforce structural and semantic payload validation across all API routes.
-- **Validate purchase data before payment**: Verify item existence, pricing integrity, and order linkage prior to order creation.
-- **Check group membership for group purchases**: Restrict group purchase submission and approval strictly to active group members.
-- **Use stored purchase data for payment amounts**: Compute Razorpay order amounts from backend database items rather than client inputs.
-- **Validate webhook signatures**: Authenticate incoming webhook payloads using timing-safe HMAC SHA256 signature comparison.
-- **Track webhook event IDs for idempotency**: Record unique event IDs to prevent duplicate webhook processing and double-captures.
-- **Record important purchase state changes**: Maintain audit trail entries for creation, approval, payment order, verification, and webhook processing.
-- **Keep credentials in environment variables**: Isolate API keys, secret hashes, and connection strings from source control.
-- **Use a public HTTPS endpoint for production webhooks**: Route live Razorpay webhook callbacks through encrypted SSL endpoints.
+- **Server-Side Price Authority**: Purchase totals and Razorpay payment order amounts are derived exclusively from database product records (`product.pricePaise * quantity`), preventing client price tampering.
+- **Cryptographic Webhook Validation**: Incoming webhook signatures are verified using timing-safe SHA256 HMAC comparisons against `RAZORPAY_WEBHOOK_SECRET`.
+- **Database-Enforced Idempotency**: Unique constraint on `WebhookDelivery.eventId` guarantees that duplicate Razorpay webhook deliveries never double-process or double-credit orders.
+- **Group Authorization Isolation**: Group purchases and approvals strictly verify active membership before proceeding.
+- **Environment Isolation**: Production secrets and credentials remain outside of version control, loaded via environment variables.
 
 ---
 
@@ -126,4 +120,4 @@ npm run dev
 ```bash
 npm test
 ```
-*Executes all 17 passing unit, security, webhook, and end-to-end integration tests.*
+*Executes all 20 passing unit, authentication, group authorization, catalog, natural language intent, webhook idempotency, and end-to-end integration tests.*

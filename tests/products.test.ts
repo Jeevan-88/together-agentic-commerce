@@ -1,4 +1,4 @@
-﻿import test from "node:test";
+import test from "node:test";
 import assert from "node:assert/strict";
 
 const BASE_URL = process.env.TEST_API_URL || "http://localhost:4000";
@@ -72,4 +72,29 @@ test("Product Recommendations - reject invalid short request text", async () => 
   assert.equal(res.status, 400, "Should return HTTP 400 for request < 3 characters");
   const body = await res.json();
   assert.equal(body.success, false);
+});
+
+test("Product Recommendations - intent parsing for cheaper, top rated, and lightweight modifiers", async () => {
+  const res = await fetch(`${BASE_URL}/api/products/recommendations`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      requestText: "Show me the cheapest top rated lightweight backpack under 7000",
+    }),
+  });
+
+  assert.equal(res.status, 200, "Should return HTTP 200");
+  const body = await res.json();
+  assert.equal(body.success, true);
+  assert.ok(body.recommendation, "Should provide a recommendation");
+  assert.ok(
+    body.recommendation.reasons.some(
+      (r: string) =>
+        r.toLowerCase().includes("budget") ||
+        r.toLowerCase().includes("rated") ||
+        r.toLowerCase().includes("lightweight") ||
+        r.toLowerCase().includes("price"),
+    ),
+    "Should include intent-based reasoning in matched reasons",
+  );
 });

@@ -31,6 +31,7 @@ export default function GroupPage() {
 
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState("");
+  const [currentUser, setCurrentUser] = useState<{ id?: string; name: string; email: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -61,22 +62,21 @@ export default function GroupPage() {
       setLoading(true);
       setMessage("");
 
-      const headers = getAuthHeaders();
-      let response = await fetch(`${API_URL}/api/groups`, { headers });
-      let data = await response.json();
+      const token =
+        typeof window !== "undefined"
+          ? localStorage.getItem("together_token")
+          : null;
 
-      if (!response.ok || !data.groups || data.groups.length === 0) {
-        const token =
-          typeof window !== "undefined"
-            ? localStorage.getItem("together_token")
-            : null;
-        if (!token) {
-          const fallbackRes = await fetch(`${API_URL}/api/groups/demo/current`);
-          if (fallbackRes.ok) {
-            data = await fallbackRes.json();
-          }
-        }
+      if (!token) {
+        setGroups([]);
+        setSelectedGroupId("");
+        setLoading(false);
+        return;
       }
+
+      const headers = getAuthHeaders();
+      const response = await fetch(`${API_URL}/api/groups`, { headers });
+      const data = await response.json();
 
       const loadedGroups: Group[] = data.groups || [];
       setGroups(loadedGroups);
@@ -101,12 +101,17 @@ export default function GroupPage() {
   useEffect(() => {
     function syncUserAndGroups() {
       const stored = localStorage.getItem("together_user");
-      if (stored) {
+      const token = localStorage.getItem("together_token");
+      if (stored && token) {
         try {
           const u = JSON.parse(stored);
+          setCurrentUser(u);
           if (u.name) setUserName(u.name);
-        } catch (e) {}
+        } catch {
+          setCurrentUser(null);
+        }
       } else {
+        setCurrentUser(null);
         setUserName("");
       }
       loadGroups();
@@ -128,19 +133,17 @@ export default function GroupPage() {
       return;
     }
 
+    if (!currentUser) {
+      setIsError(true);
+      setMessage("Please sign in or create an account before creating a shopping group.");
+      window.dispatchEvent(new CustomEvent("open_together_auth"));
+      return;
+    }
+
     try {
       setSaving(true);
       setMessage("");
       setIsError(false);
-
-      const stored = localStorage.getItem("together_user");
-      let email = "demo@together.local";
-      if (stored) {
-        try {
-          const u = JSON.parse(stored);
-          if (u.email) email = u.email;
-        } catch (e) {}
-      }
 
       const response = await fetch(`${API_URL}/api/groups`, {
         method: "POST",
@@ -148,7 +151,7 @@ export default function GroupPage() {
         body: JSON.stringify({
           name: groupName.trim(),
           userName: userName.trim(),
-          email,
+          email: currentUser.email,
         }),
       });
 
@@ -372,6 +375,31 @@ export default function GroupPage() {
               }`}
             >
               {message}
+            </div>
+          )}
+
+          {!currentUser && (
+            <div className="surface-card mb-8 rounded-3xl border border-blue-200 bg-blue-50/70 p-6 sm:p-7 shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-blue-700">
+                    Sign In Required
+                  </span>
+                  <h2 className="text-xl font-bold text-slate-950 mt-0.5">
+                    Sign in to access your shopping groups
+                  </h2>
+                  <p className="text-xs text-black/60 mt-1 max-w-xl">
+                    Shopping groups are private to authorized members. Sign in or create an account to view your groups, invite colleagues or family, and collaborate on purchases.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => window.dispatchEvent(new CustomEvent("open_together_auth"))}
+                  className="oval-pill-btn shrink-0 border-black bg-black px-6 py-3 text-xs font-bold text-white shadow-sm hover:bg-black/80 transition"
+                >
+                  Sign In / Register &rarr;
+                </button>
+              </div>
             </div>
           )}
 

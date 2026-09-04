@@ -52,6 +52,7 @@ function ProposalContent() {
 
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState(incomingGroupId);
+  const [currentUser, setCurrentUser] = useState<{ id?: string; name: string; email: string } | null>(null);
   const [loadingGroups, setLoadingGroups] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -70,6 +71,28 @@ function ProposalContent() {
     }
     return headers;
   }
+
+  useEffect(() => {
+    function checkUser() {
+      const token = localStorage.getItem("together_token");
+      const stored = localStorage.getItem("together_user");
+      if (token && stored) {
+        try {
+          setCurrentUser(JSON.parse(stored));
+        } catch {
+          setCurrentUser(null);
+        }
+      } else {
+        setCurrentUser(null);
+      }
+    }
+
+    checkUser();
+    window.addEventListener("together_auth_changed", checkUser);
+    return () => {
+      window.removeEventListener("together_auth_changed", checkUser);
+    };
+  }, []);
 
   useEffect(() => {
     if (productId && !imageUrl) {
@@ -103,22 +126,20 @@ function ProposalContent() {
         setLoadingGroups(true);
         setError("");
 
-        const headers = getAuthHeaders();
-        let response = await fetch(`${API_URL}/api/groups`, { headers });
-        let data = await response.json();
+        const token =
+          typeof window !== "undefined"
+            ? localStorage.getItem("together_token")
+            : null;
 
-        if (!response.ok || !data.groups || data.groups.length === 0) {
-          const token =
-            typeof window !== "undefined"
-              ? localStorage.getItem("together_token")
-              : null;
-          if (!token) {
-            const fallbackRes = await fetch(`${API_URL}/api/groups/demo/current`);
-            if (fallbackRes.ok) {
-              data = await fallbackRes.json();
-            }
-          }
+        if (!token) {
+          setGroups([]);
+          setLoadingGroups(false);
+          return;
         }
+
+        const headers = getAuthHeaders();
+        const response = await fetch(`${API_URL}/api/groups`, { headers });
+        const data = await response.json();
 
         const loadedGroups: Group[] = data.groups || [];
         setGroups(loadedGroups);
@@ -138,9 +159,15 @@ function ProposalContent() {
     }
 
     loadGroups();
-  }, [mode, incomingGroupId]);
+  }, [mode, incomingGroupId, currentUser]);
 
   async function createAndApprovePurchase() {
+    if (!currentUser) {
+      setError("Please sign in or create an account to authorize this purchase.");
+      window.dispatchEvent(new CustomEvent("open_together_auth"));
+      return;
+    }
+
     if (!productId || !request) {
       setError("Product or request information is missing.");
       return;
@@ -443,6 +470,31 @@ function ProposalContent() {
 
           {/* Review & Consent Block */}
           <div className="surface-card mt-6 rounded-3xl p-6 sm:p-7">
+            {!currentUser && (
+              <div className="mb-6 rounded-2xl border border-blue-200 bg-blue-50/70 p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div>
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-blue-700">
+                      Sign In Required
+                    </span>
+                    <p className="text-xs font-bold text-slate-950 mt-0.5">
+                      Authentication required to create and authorize this purchase.
+                    </p>
+                    <p className="text-[11px] text-black/60 mt-0.5">
+                      Your identity is cryptographically linked to the order and payment audit trail.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => window.dispatchEvent(new CustomEvent("open_together_auth"))}
+                    className="oval-pill-btn shrink-0 border-black bg-black px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-black/80 transition"
+                  >
+                    Sign In / Register &rarr;
+                  </button>
+                </div>
+              </div>
+            )}
+
             <label className="flex cursor-pointer items-start gap-3">
               <input
                 type="checkbox"
