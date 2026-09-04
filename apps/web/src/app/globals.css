@@ -1,26 +1,78 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
+  --background: #f7f7f5;
   --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --surface: #ffffff;
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --blue-accent: #0284c7;
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Physical 3D Card Depth & Glass surfaces */
+.surface-card {
+  background-color: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04), 0 2px 6px -1px rgba(0, 0, 0, 0.02), inset 0 1px 0 0 rgba(255, 255, 255, 0.9), inset 0 -1px 0 0 rgba(0, 0, 0, 0.02);
+}
+
+.surface-card-interactive {
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.surface-card-interactive:hover {
+  transform: translateY(-2px);
+  border-color: rgba(0, 0, 0, 0.16);
+  box-shadow: 0 10px 25px -4px rgba(0, 0, 0, 0.07), 0 4px 10px -2px rgba(0, 0, 0, 0.03), inset 0 1px 0 0 rgba(255, 255, 255, 1);
+}
+
+.surface-inset {
+  background-color: #f3f3f1;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* Accessibility Mode (High Contrast & Enhanced Focus) */
+html.accessible-mode {
+  --background: #ffffff;
+  --foreground: #000000;
+  --border-subtle: #000000;
+}
+
+html.accessible-mode body {
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+html.accessible-mode .surface-card {
+  border: 2px solid #000000 !important;
+  box-shadow: none !important;
+}
+
+html.accessible-mode .surface-inset {
+  border: 2px solid #000000 !important;
+  background-color: #f0f0f0 !important;
+}
+
+html.accessible-mode button,
+html.accessible-mode a,
+html.accessible-mode input,
+html.accessible-mode textarea {
+  border-width: 2px !important;
+}
+
+:focus-visible {
+  outline: 2px solid #0f172a;
+  outline-offset: 2px;
+}
+
+html.accessible-mode :focus-visible {
+  outline: 3px solid #000000 !important;
+  outline-offset: 3px !important;
 }

@@ -1,36 +1,19 @@
-import Link from "next/link";
+﻿import Link from "next/link";
+import Header from "../components/Header";
 
 export default function Home() {
   return (
     <main className="min-h-screen bg-[#f7f7f5] text-[#171717]">
       <div className="mx-auto flex min-h-screen max-w-7xl flex-col px-6 py-6 sm:px-10">
-        <header className="flex items-center justify-between border-b border-black/10 pb-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-black text-sm font-semibold text-white">
-              T
-            </div>
+        <Header />
 
-            <span className="text-lg font-semibold tracking-tight">
-              TOGETHER
-            </span>
-          </div>
-
-          <div className="hidden items-center gap-6 text-sm text-black/60 sm:flex">
-            <button className="transition hover:text-black">
-              How it works
-            </button>
-            <button className="transition hover:text-black">
-              Activity
-            </button>
-          </div>
-        </header>
-
-        <section className="flex flex-1 items-center py-20">
-          <div className="grid w-full gap-16 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
+        <section className="flex flex-1 items-center py-16 sm:py-20">
+          <div className="grid w-full gap-12 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
             <div>
-              <p className="mb-5 text-sm font-medium uppercase tracking-[0.2em] text-black/50">
-                Group commerce
-              </p>
+              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/80 px-3.5 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-black/60 shadow-sm backdrop-blur-sm">
+                <span className="h-1.5 w-1.5 rounded-full bg-black"></span>
+                Group and Solo Commerce
+              </div>
 
               <h1 className="max-w-3xl text-5xl font-semibold leading-[1.05] tracking-[-0.04em] sm:text-6xl lg:text-7xl">
                 Decide together.
@@ -38,7 +21,7 @@ export default function Home() {
                 Buy with confidence.
               </h1>
 
-              <p className="mt-7 max-w-2xl text-lg leading-8 text-black/60">
+              <p className="mt-7 max-w-2xl text-lg leading-8 text-black/65">
                 Tell TOGETHER what you are looking for, compare the options,
                 bring everyone into the decision, and complete the purchase
                 when the group is ready.
@@ -47,18 +30,33 @@ export default function Home() {
               <div className="mt-10 flex flex-col gap-3 sm:flex-row">
                 <Link
                   href="/shop"
-                  className="rounded-xl bg-black px-6 py-3.5 text-center text-sm font-medium text-white transition hover:bg-black/80"
+                  className="rounded-xl bg-black px-6 py-3.5 text-center text-sm font-medium text-white shadow-sm transition hover:bg-black/80"
                 >
                   Start shopping
                 </Link>
 
-                <button className="rounded-xl border border-black/15 bg-white px-6 py-3.5 text-sm font-medium transition hover:bg-black/5">
+                <Link
+                  href="/group"
+                  className="rounded-xl border border-black/15 bg-white px-6 py-3.5 text-center text-sm font-medium text-slate-900 shadow-sm transition hover:bg-black/5"
+                >
                   Create a group
-                </button>
+                </Link>
+              </div>
+
+              <div className="mt-8 flex items-center gap-6 text-xs text-black/45">
+                <span className="flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                  Razorpay Test Mode integrated
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-sky-500"></span>
+                  Real-time webhook audit
+                </span>
               </div>
             </div>
 
-            <div className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm">
+            {/* Product Decision Card */}
+            <div className="surface-card rounded-3xl p-6 shadow-sm sm:p-7">
               <div className="mb-5 flex items-center justify-between">
                 <div>
                   <p className="text-sm font-semibold">Weekend trip</p>
@@ -67,59 +65,130 @@ export default function Home() {
                   </p>
                 </div>
 
-                <span className="rounded-full bg-black px-3 py-1 text-xs text-white">
+                <span className="rounded-full bg-black px-3 py-1 text-xs font-medium text-white">
                   Group
                 </span>
               </div>
 
               <div className="space-y-3">
-                <div className="rounded-2xl border border-black/10 p-4">
+                <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="font-medium">Carry-on backpack</p>
-                      <p className="mt-1 text-sm text-black/50">
-                        Lightweight, cabin friendly
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-black/40">
+                        TrailWorks
+                      </span>
+                      <p className="font-medium text-slate-900">Carry-on backpack</p>
+                      <p className="mt-1 text-xs text-black/50">
+                        25L capacity, lightweight, cabin friendly
                       </p>
                     </div>
 
-                    <span className="text-sm font-semibold">₹4,999</span>
+                    <span className="text-sm font-semibold text-slate-950">₹4,999</span>
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-black/10 p-4">
+                <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="font-medium">Travel backpack</p>
-                      <p className="mt-1 text-sm text-black/50">
-                        More space, stronger build
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-black/40">
+                        Northline
+                      </span>
+                      <p className="font-medium text-slate-900">Travel backpack</p>
+                      <p className="mt-1 text-xs text-black/50">
+                        28L capacity, laptop sleeve, durable build
                       </p>
                     </div>
 
-                    <span className="text-sm font-semibold">₹5,499</span>
+                    <span className="text-sm font-semibold text-slate-950">₹5,499</span>
                   </div>
                 </div>
 
-                <div className="rounded-2xl bg-[#f4f4f2] p-4">
-                  <p className="text-xs font-medium uppercase tracking-wide text-black/45">
-                    Group decision
+                <div className="surface-inset rounded-2xl p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-black/50">
+                    Group recommendation
                   </p>
 
-                  <p className="mt-2 text-sm leading-6">
-                    The first option fits the shared budget and keeps the
-                    weight low for everyone.
+                  <p className="mt-2 text-sm leading-6 text-black/75">
+                    The 25L option fits the shared budget of ₹5,000 and keeps the
+                    cabin weight low for everyone on the trip.
                   </p>
                 </div>
               </div>
 
-              <button className="mt-5 w-full rounded-xl bg-black py-3 text-sm font-medium text-white">
-                Review purchase
-              </button>
+              <Link
+                href="/shop?mode=group"
+                className="mt-6 block w-full rounded-xl bg-black py-3.5 text-center text-sm font-medium text-white transition hover:bg-black/80"
+              >
+                Try group shopping
+              </Link>
             </div>
           </div>
         </section>
 
-        <footer className="border-t border-black/10 py-5 text-xs text-black/40">
-          TOGETHER · A simpler way to make purchases as a group
+        {/* How it Works Section */}
+        <section className="border-t border-black/10 py-16 sm:py-20">
+          <div className="mb-12">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-black/45">
+              How it works
+            </p>
+            <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
+              From shopping intent to verified checkout
+            </h2>
+            <p className="mt-3 max-w-2xl text-base text-black/60">
+              A transparent four-step flow built for clarity, group consensus and fast settlement.
+            </p>
+          </div>
+
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="surface-card rounded-2xl p-6">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-black text-sm font-semibold text-white">
+                1
+              </div>
+              <h3 className="mt-5 text-base font-semibold">State intent</h3>
+              <p className="mt-2 text-sm leading-6 text-black/60">
+                Describe what you want to buy by typing or using your voice. Shop solo or invite your group.
+              </p>
+            </div>
+
+            <div className="surface-card rounded-2xl p-6">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-black text-sm font-semibold text-white">
+                2
+              </div>
+              <h3 className="mt-5 text-base font-semibold">Compare products</h3>
+              <p className="mt-2 text-sm leading-6 text-black/60">
+                Explore real catalog items with transparent pricing, specifications, and merchant details.
+              </p>
+            </div>
+
+            <div className="surface-card rounded-2xl p-6">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-black text-sm font-semibold text-white">
+                3
+              </div>
+              <h3 className="mt-5 text-base font-semibold">Group approval</h3>
+              <p className="mt-2 text-sm leading-6 text-black/60">
+                Review item details and secure agreement before proceeding to checkout.
+              </p>
+            </div>
+
+            <div className="surface-card rounded-2xl p-6">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-black text-sm font-semibold text-white">
+                4
+              </div>
+              <h3 className="mt-5 text-base font-semibold">Razorpay settlement</h3>
+              <p className="mt-2 text-sm leading-6 text-black/60">
+                Complete payment in Razorpay Test Mode with webhook confirmation and live audit trail.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <footer className="flex flex-col gap-4 border-t border-black/10 py-6 text-xs text-black/45 sm:flex-row sm:items-center sm:justify-between">
+          <p>TOGETHER (c) 2026. A simpler way to make purchases as a group.</p>
+          <div className="flex items-center gap-5">
+            <Link href="/shop" className="hover:text-black">Shop</Link>
+            <Link href="/group" className="hover:text-black">Groups</Link>
+            <span>Razorpay Buildathon</span>
+          </div>
         </footer>
       </div>
     </main>
