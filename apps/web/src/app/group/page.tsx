@@ -258,6 +258,41 @@ export default function GroupPage() {
     }
   }
 
+  async function deleteGroup(groupId: string) {
+    if (!groupId) return;
+    try {
+      setSaving(true);
+      setMessage("");
+      setIsError(false);
+
+      const response = await fetch(`${API_URL}/api/groups/${groupId}`, {
+        method: "DELETE",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Unable to delete group");
+      }
+
+      const remainingGroups = groups.filter((g) => g.id !== groupId);
+      setGroups(remainingGroups);
+      if (selectedGroupId === groupId) {
+        setSelectedGroupId(remainingGroups[0]?.id || "");
+      }
+
+      setIsError(false);
+      setMessage("Group deleted successfully.");
+    } catch (error) {
+      setIsError(true);
+      setMessage(
+        error instanceof Error ? error.message : "Unable to delete group",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
   function continueShopping() {
     if (!selectedGroupId) {
       setIsError(true);
@@ -449,13 +484,23 @@ export default function GroupPage() {
                   <h2 className="text-2xl font-semibold">{selectedGroup.name}</h2>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={continueShopping}
-                  className="oval-pill-btn border-black bg-black px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition hover:bg-black/80"
-                >
-                  Shop with this group &rarr;
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => deleteGroup(selectedGroup.id)}
+                    disabled={saving}
+                    className="oval-pill-btn border-red-300 bg-red-50 text-red-700 text-xs font-bold transition hover:bg-red-600 hover:text-white px-4 py-3 shadow-xs disabled:opacity-50"
+                  >
+                    Delete Group
+                  </button>
+                  <button
+                    type="button"
+                    onClick={continueShopping}
+                    className="oval-pill-btn border-black bg-black px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition hover:bg-black/80"
+                  >
+                    Shop with this group &rarr;
+                  </button>
+                </div>
               </div>
 
               <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">

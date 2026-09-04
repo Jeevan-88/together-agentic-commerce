@@ -1,4 +1,4 @@
-﻿import test from "node:test";
+import test from "node:test";
 import assert from "node:assert/strict";
 
 const BASE_URL = process.env.TEST_API_URL || "http://localhost:4000";
@@ -98,6 +98,18 @@ test("Group Flow - create group, prevent duplicate members, protect owner", asyn
     { method: "DELETE" }
   );
   assert.equal(removeMissingRes.status, 404, "Must return 404 for nonexistent member");
+
+  // 8. Delete group succeeds (200 OK)
+  const deleteGroupRes = await fetch(`${BASE_URL}/api/groups/${groupId}`, {
+    method: "DELETE",
+  });
+  assert.equal(deleteGroupRes.status, 200, "Should delete group with 200 OK");
+  const deleteGroupBody = await deleteGroupRes.json();
+  assert.equal(deleteGroupBody.success, true);
+
+  // 9. Fetch deleted group returns 404
+  const getDeletedRes = await fetch(`${BASE_URL}/api/groups/${groupId}`);
+  assert.equal(getDeletedRes.status, 404, "Must return 404 for deleted group");
 });
 
 test("Group Flow - demo current groups retrieval", async () => {

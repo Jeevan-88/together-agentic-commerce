@@ -284,6 +284,55 @@ router.delete("/:id/members/:userId", async (req, res) => {
   }
 });
 
+router.delete("/:id", async (req, res) => {
+  const groupId = req.params.id;
+
+  if (!groupId) {
+    return res.status(400).json({
+      success: false,
+      message: "Group ID is required",
+    });
+  }
+
+  try {
+    const group = await prisma.group.findUnique({
+      where: {
+        id: groupId,
+      },
+    });
+
+    if (!group) {
+      return res.status(404).json({
+        success: false,
+        message: "Group not found",
+      });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.purchase.updateMany({
+        where: { groupId },
+        data: { groupId: null },
+      });
+
+      await tx.group.delete({
+        where: { id: groupId },
+      });
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Group deleted successfully",
+    });
+  } catch (error) {
+    console.error("Failed to delete group:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete group",
+    });
+  }
+});
+
 router.get("/demo/current", async (_req, res) => {
   try {
     const user = await prisma.user.findUnique({
