@@ -44,27 +44,29 @@ function normalizeText(value: string): string {
 }
 
 function extractBudget(text: string): number | undefined {
-  const normalized = normalizeText(text);
-
   const patterns = [
-    /(?:under|below|less than|within|upto|up to|max(?:imum)?)[^\d]{0,10}(\d+(?:\.\d+)?)\s*(k|thousand)?/,
-    /(?:₹|rs|inr)\s*(\d+(?:\.\d+)?)\s*(k|thousand)?/,
+    /(?:under|below|less than|within|upto|up to|max(?:imum)?)[^\d]{0,10}([\d,]+(?:\.\d+)?)\s*(k|thousand)?/i,
+    /(?:₹|rs|inr)\s*([\d,]+(?:\.\d+)?)\s*(k|thousand)?/i,
   ];
 
   for (const pattern of patterns) {
-    const match = normalized.match(pattern);
+    const match = text.match(pattern);
 
     if (!match) {
       continue;
     }
 
-    let amount = Number(match[1]);
+    const raw = match[1].replace(/,/g, "");
+    let amount = Number(raw);
 
     if (!Number.isFinite(amount)) {
       continue;
     }
 
-    if (match[2] === "k" || match[2] === "thousand") {
+    if (
+      match[2]?.toLowerCase() === "k" ||
+      match[2]?.toLowerCase() === "thousand"
+    ) {
       amount *= 1000;
     }
 

@@ -594,10 +594,10 @@ function ResultsContent() {
                         {/* Budget Analysis: Exact Price vs Stated Limit (Exceeds: Yes / No) */}
                         {(() => {
                           const budgetMatch = request.match(
-                            /(?:under|below|less than|within|upto|up to|max|maximum|₹|rs|inr)[^\d]{0,10}(\d+(?:\.\d+)?)\s*(k|thousand)?/i,
+                            /(?:under|below|less than|within|upto|up to|max|maximum|₹|rs|inr)[^\d]{0,10}([\d,]+(?:\.\d+)?)\s*(k|thousand)?/i,
                           );
                           if (!budgetMatch) return null;
-                          let val = Number(budgetMatch[1]);
+                          let val = Number(budgetMatch[1].replace(/,/g, ""));
                           if (
                             budgetMatch[2]?.toLowerCase().startsWith("k") ||
                             budgetMatch[2]?.toLowerCase().startsWith("thousand")
