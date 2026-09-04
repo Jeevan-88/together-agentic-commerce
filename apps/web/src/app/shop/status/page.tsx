@@ -1,8 +1,9 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import Header from "../../../components/Header";
 
 type PurchaseStatus = {
   id: string;
@@ -48,6 +49,7 @@ type AuditEntry = {
   id: string;
   action: string;
   createdAt: string;
+  details?: unknown;
 };
 
 function formatAmount(amountPaise: number, currency: string) {
@@ -61,7 +63,7 @@ function formatAmount(amountPaise: number, currency: string) {
 function statusLabel(status: string) {
   switch (status) {
     case "PAID":
-      return "Payment complete";
+      return "Payment confirmed";
     case "FAILED":
       return "Payment failed";
     case "CANCELLED":
@@ -69,7 +71,7 @@ function statusLabel(status: string) {
     case "PAYMENT_PROCESSING":
       return "Payment processing";
     case "PENDING_PAYMENT":
-      return "Approved for payment";
+      return "Ready for payment";
     default:
       return status.replaceAll("_", " ");
   }
@@ -78,17 +80,17 @@ function statusLabel(status: string) {
 function statusDescription(status: string) {
   switch (status) {
     case "PAID":
-      return "The payment has been confirmed successfully.";
+      return "Your payment has been reconciled and settled successfully through Razorpay.";
     case "FAILED":
-      return "The payment could not be completed.";
+      return "The transaction could not be completed or was rejected.";
     case "CANCELLED":
-      return "This purchase has been cancelled.";
+      return "This purchase order has been cancelled.";
     case "PAYMENT_PROCESSING":
-      return "The payment was verified. We are waiting for final confirmation.";
+      return "Payment was received. Awaiting final webhook reconciliation.";
     case "PENDING_PAYMENT":
-      return "The purchase is approved and ready for payment.";
+      return "The purchase has been approved and is awaiting payment checkout.";
     default:
-      return "The purchase is being processed.";
+      return "The purchase order is being processed.";
   }
 }
 
@@ -103,7 +105,7 @@ function StatusContent() {
 
   useEffect(() => {
     if (!purchaseId) {
-      setError("Purchase ID is missing.");
+      setError("Purchase ID was not specified.");
       setIsLoading(false);
       return;
     }
@@ -112,8 +114,9 @@ function StatusContent() {
 
     const loadStatus = async () => {
       try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/audit/purchases/${purchaseId}`,
+          `${apiUrl}/api/audit/purchases/${purchaseId}`,
           {
             cache: "no-store",
           },
@@ -122,9 +125,7 @@ function StatusContent() {
         const data = await response.json();
 
         if (!response.ok || !data.success) {
-          throw new Error(
-            data.message || "Failed to load purchase status",
-          );
+          throw new Error(data.message || "Failed to load purchase status");
         }
 
         if (!active) return;
@@ -134,13 +135,9 @@ function StatusContent() {
         setError("");
       } catch (err) {
         if (!active) return;
-
         console.error("Failed to load purchase status:", err);
-
         setError(
-          err instanceof Error
-            ? err.message
-            : "Failed to load purchase status.",
+          err instanceof Error ? err.message : "Failed to load purchase status.",
         );
       } finally {
         if (active) {
@@ -150,7 +147,6 @@ function StatusContent() {
     };
 
     loadStatus();
-
     const interval = window.setInterval(loadStatus, 3000);
 
     return () => {
@@ -163,9 +159,11 @@ function StatusContent() {
     return (
       <main className="min-h-screen bg-[#f7f7f5] text-[#171717]">
         <div className="mx-auto flex min-h-screen max-w-5xl items-center justify-center px-6">
-          <p className="text-sm text-black/50">
-            Loading purchase status...
-          </p>
+          <div className="surface-card rounded-2xl p-8 text-center">
+            <p className="text-sm font-medium text-black/60">
+              Loading purchase audit records...
+            </p>
+          </div>
         </div>
       </main>
     );
@@ -175,20 +173,16 @@ function StatusContent() {
     return (
       <main className="min-h-screen bg-[#f7f7f5] text-[#171717]">
         <div className="mx-auto flex min-h-screen max-w-5xl items-center justify-center px-6">
-          <div className="w-full max-w-lg rounded-3xl border border-black/10 bg-white p-8 text-center shadow-sm">
-            <h1 className="text-2xl font-semibold">
-              Purchase status unavailable
-            </h1>
-
-            <p className="mt-3 text-sm leading-6 text-black/50">
-              {error || "We could not find this purchase."}
+          <div className="surface-card w-full max-w-lg rounded-3xl p-8 text-center shadow-sm">
+            <h1 className="text-2xl font-semibold">Status unavailable</h1>
+            <p className="mt-2 text-sm leading-6 text-black/55">
+              {error || "Could not find record of this purchase."}
             </p>
-
             <Link
               href="/shop"
-              className="mt-6 inline-flex rounded-xl bg-black px-6 py-3 text-sm font-medium text-white"
+              className="mt-6 inline-block rounded-xl bg-black px-6 py-3 text-sm font-semibold text-white"
             >
-              Start again
+              Start shopping
             </Link>
           </div>
         </div>
@@ -197,147 +191,104 @@ function StatusContent() {
   }
 
   const isPaid = purchase.status === "PAID";
-  const isFailed =
-    purchase.status === "FAILED" ||
-    purchase.status === "CANCELLED";
-
-  const approvalComplete =
-    purchase.approval?.status === "APPROVED";
-
+  const isFailed = purchase.status === "FAILED" || purchase.status === "CANCELLED";
+  const approvalComplete = purchase.approval?.status === "APPROVED";
   const paymentVerified =
     purchase.payment?.status === "AUTHORIZED" ||
     purchase.payment?.status === "CAPTURED";
 
   return (
     <main className="min-h-screen bg-[#f7f7f5] text-[#171717]">
-      <div className="mx-auto min-h-screen max-w-5xl px-6 py-8 sm:px-10">
-        <header className="flex items-center justify-between border-b border-black/10 pb-5">
-          <Link
-            href="/"
-            className="flex items-center gap-3"
-            aria-label="Go to TOGETHER home"
-          >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-black text-sm font-semibold text-white">
-              T
-            </div>
+      <div className="mx-auto flex min-h-screen max-w-5xl flex-col px-6 py-6 sm:px-10">
+        <Header currentStep="Order Status" />
 
-            <span className="text-lg font-semibold tracking-tight">
-              TOGETHER
-            </span>
-          </Link>
-
-          <Link
-            href="/shop"
-            className="text-sm text-black/50 transition hover:text-black"
-          >
-            New purchase
-          </Link>
-        </header>
-
-        <section className="mx-auto max-w-3xl py-14">
+        <section className="mx-auto w-full max-w-3xl py-10 sm:py-14">
+          {/* Hero Status Badge */}
           <div className="text-center">
             <div
-              className={`mx-auto flex h-16 w-16 items-center justify-center rounded-full text-2xl ${
+              className={`mx-auto flex h-16 w-16 items-center justify-center rounded-2xl shadow-sm text-2xl font-bold ${
                 isPaid
                   ? "bg-black text-white"
                   : isFailed
                     ? "bg-red-100 text-red-700"
-                    : "bg-black/5 text-black"
+                    : "bg-white text-black border border-black/10"
               }`}
             >
-              {isPaid ? "✓" : isFailed ? "!" : "…"}
+              {isPaid ? "✓" : isFailed ? "!" : "•"}
             </div>
 
-            <p className="mt-6 text-sm font-medium uppercase tracking-[0.2em] text-black/40">
-              Purchase status
-            </p>
+            <span className="mt-5 inline-block text-xs font-semibold uppercase tracking-[0.2em] text-black/45">
+              Purchase Lifecycle
+            </span>
 
-            <h1 className="mt-3 text-4xl font-semibold tracking-[-0.03em] sm:text-5xl">
+            <h1 className="mt-1 text-4xl font-semibold tracking-tight sm:text-5xl">
               {statusLabel(purchase.status)}
             </h1>
 
-            <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-black/55">
+            <p className="mx-auto mt-3 max-w-xl text-base text-black/60">
               {statusDescription(purchase.status)}
             </p>
           </div>
 
-          <div className="mt-10 overflow-hidden rounded-3xl border border-black/10 bg-white shadow-sm">
+          {/* Main Card */}
+          <div className="surface-card mt-10 overflow-hidden rounded-3xl shadow-sm">
+            {/* Header: Item & Total */}
             <div className="border-b border-black/10 p-6 sm:p-8">
-              <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-black/40">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-black/45">
                     {purchase.items[0]?.merchantName || "Merchant"}
-                  </p>
-
-                  <h2 className="mt-2 text-2xl font-semibold tracking-tight">
-                    {purchase.items[0]?.productName || "Purchase"}
+                  </span>
+                  <h2 className="mt-1 text-2xl font-semibold text-slate-950">
+                    {purchase.items[0]?.productName || "Purchase Item"}
                   </h2>
-
-                  <p className="mt-2 text-sm text-black/50">
-                    {purchase.mode === "GROUP"
-                      ? "Group purchase"
-                      : "Solo purchase"}
-                  </p>
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="rounded-full bg-black/5 px-2.5 py-0.5 text-xs font-medium text-black/65">
+                      {purchase.mode === "GROUP" ? "Group purchase" : "Solo purchase"}
+                    </span>
+                    {purchase.payment?.razorpayPaymentId && (
+                      <span className="text-xs font-mono text-black/50">
+                        Payment: {purchase.payment.razorpayPaymentId}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="sm:text-right">
-                  <p className="text-xs text-black/40">
-                    Total
-                  </p>
-
-                  <p className="mt-1 text-3xl font-semibold tracking-tight">
-                    {formatAmount(
-                      purchase.totalPaise,
-                      purchase.currency,
-                    )}
+                  <span className="text-xs text-black/40">Total</span>
+                  <p className="mt-0.5 text-3xl font-semibold text-slate-950">
+                    {formatAmount(purchase.totalPaise, purchase.currency)}
                   </p>
                 </div>
               </div>
             </div>
 
+            {/* Progress Flow */}
             <div className="border-b border-black/10 p-6 sm:p-8">
-              <p className="text-xs font-medium uppercase tracking-wide text-black/40">
-                Purchase progress
-              </p>
+              <span className="text-xs font-semibold uppercase tracking-wider text-black/45">
+                Verification Progress
+              </span>
 
-              <div className="mt-6 space-y-5">
+              <div className="mt-5 space-y-4">
                 {[
-                  {
-                    label: "Purchase created",
-                    done: true,
-                  },
-                  {
-                    label: "Approval granted",
-                    done: approvalComplete,
-                  },
-                  {
-                    label: "Payment verified",
-                    done: paymentVerified,
-                  },
-                  {
-                    label: "Payment confirmed",
-                    done: isPaid,
-                  },
-                ].map((step) => (
-                  <div
-                    key={step.label}
-                    className="flex items-center gap-4"
-                  >
+                  { label: "Purchase intent created and validated", done: true },
+                  { label: "Approval recorded", done: approvalComplete },
+                  { label: "Payment order authorized", done: paymentVerified },
+                  { label: "Settlement confirmed via webhook / capture", done: isPaid },
+                ].map((step, idx) => (
+                  <div key={idx} className="flex items-center gap-3.5">
                     <div
-                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
+                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
                         step.done
                           ? "bg-black text-white"
-                          : "bg-black/5 text-black/35"
+                          : "border border-black/15 bg-black/5 text-transparent"
                       }`}
                     >
                       {step.done ? "✓" : ""}
                     </div>
-
                     <span
                       className={`text-sm ${
-                        step.done
-                          ? "font-medium text-black"
-                          : "text-black/35"
+                        step.done ? "font-medium text-slate-950" : "text-black/40"
                       }`}
                     >
                       {step.label}
@@ -347,33 +298,36 @@ function StatusContent() {
               </div>
             </div>
 
+            {/* Group Members Section if Group Mode */}
             {purchase.group && (
               <div className="border-b border-black/10 p-6 sm:p-8">
-                <p className="text-xs font-medium uppercase tracking-wide text-black/40">
-                  Group
-                </p>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-black/45">
+                    Shopping Group
+                  </span>
+                  <span className="text-xs font-medium text-black/50">
+                    {purchase.group.members.length} members
+                  </span>
+                </div>
 
-                <h3 className="mt-2 text-lg font-semibold">
+                <h3 className="mt-1 text-lg font-semibold text-slate-950">
                   {purchase.group.name}
                 </h3>
 
-                <div className="mt-5 space-y-3">
+                <div className="mt-4 space-y-2">
                   {purchase.group.members.map((member) => (
                     <div
                       key={member.id}
-                      className="flex items-center justify-between rounded-2xl bg-[#f5f5f3] p-4"
+                      className="flex items-center justify-between rounded-xl border border-black/5 bg-black/[0.02] px-4 py-2.5"
                     >
                       <div>
-                        <p className="text-sm font-medium">
+                        <p className="text-sm font-medium text-black">
                           {member.name}
                         </p>
-
-                        <p className="mt-1 text-xs text-black/45">
-                          {member.email}
-                        </p>
+                        <p className="text-xs text-black/45">{member.email}</p>
                       </div>
 
-                      <span className="text-xs font-medium uppercase tracking-wide text-black/40">
+                      <span className="rounded-full bg-black/5 px-2.5 py-0.5 text-[11px] font-semibold text-black/60">
                         {member.role}
                       </span>
                     </div>
@@ -382,54 +336,62 @@ function StatusContent() {
               </div>
             )}
 
+            {/* Original Request */}
             <div className="border-b border-black/10 p-6 sm:p-8">
-              <p className="text-xs font-medium uppercase tracking-wide text-black/40">
-                Request
-              </p>
-
-              <div className="mt-4 rounded-2xl bg-[#f5f5f3] p-5">
-                <p className="text-sm leading-7 text-black/65">
+              <span className="text-xs font-semibold uppercase tracking-wider text-black/45">
+                Initial Request
+              </span>
+              <div className="surface-inset mt-3 rounded-2xl p-4">
+                <p className="text-sm leading-6 text-black/75">
                   {purchase.requestText}
                 </p>
               </div>
             </div>
 
+            {/* Activity Audit Timeline */}
             <div className="p-6 sm:p-8">
-              <p className="text-xs font-medium uppercase tracking-wide text-black/40">
-                Activity
-              </p>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wider text-black/45">
+                  Audit Trail
+                </span>
+                <span className="text-[11px] text-black/40">
+                  Auto-updating live
+                </span>
+              </div>
 
-              <div className="mt-6 space-y-4">
-                {audit.map((entry) => (
-                  <div
-                    key={entry.id}
-                    className="flex gap-4 border-b border-black/5 pb-4 last:border-0 last:pb-0"
-                  >
-                    <div className="mt-1 h-2 w-2 shrink-0 rounded-full bg-black/30" />
-
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium">
-                        {entry.action.replaceAll("_", " ")}
-                      </p>
-
-                      <p className="mt-1 text-xs text-black/40">
-                        {new Date(entry.createdAt).toLocaleString(
-                          "en-IN",
-                        )}
-                      </p>
+              <div className="mt-5 space-y-3">
+                {audit.length === 0 ? (
+                  <p className="text-xs text-black/40">No audit events logged yet.</p>
+                ) : (
+                  audit.map((entry) => (
+                    <div
+                      key={entry.id}
+                      className="flex items-start gap-3 border-b border-black/5 pb-3 last:border-0 last:pb-0"
+                    >
+                      <div className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-black/40" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-900">
+                          {entry.action.replaceAll("_", " ")}
+                        </p>
+                        <p className="mt-0.5 text-[11px] text-black/45">
+                          {new Date(entry.createdAt).toLocaleString("en-IN", {
+                            timeZone: "Asia/Kolkata",
+                          })}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           </div>
 
-          <div className="mt-6 text-center">
+          <div className="mt-8 text-center">
             <Link
               href="/shop"
-              className="text-sm font-medium text-black/45 transition hover:text-black"
+              className="rounded-xl border border-black/15 bg-white px-6 py-3 text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-black/5"
             >
-              Start a new purchase
+              Start another purchase
             </Link>
           </div>
         </section>
@@ -444,9 +406,7 @@ export default function StatusPage() {
       fallback={
         <main className="min-h-screen bg-[#f7f7f5] text-[#171717]">
           <div className="flex min-h-screen items-center justify-center">
-            <p className="text-sm text-black/50">
-              Loading purchase status...
-            </p>
+            <p className="text-sm text-black/50">Loading purchase status...</p>
           </div>
         </main>
       }
