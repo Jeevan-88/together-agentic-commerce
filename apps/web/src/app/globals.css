@@ -243,49 +243,49 @@ html.accessible-mode :focus-visible {
   animation: big-coin-sweep-r-to-l 1.1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
 
-/* Center Splitting Black Circles Animation */
-@keyframes split-circle-left {
+/* Center Big Full Height Splitting Black Circles Animation */
+@keyframes big-split-circle-left {
   0% {
     left: 50%;
-    transform: translate(-50%, -50%) scale(0.3);
+    transform: translate(-50%, -50%) scale(0.1);
     opacity: 0;
   }
-  35% {
+  25% {
     left: 50%;
-    transform: translate(-50%, -50%) scale(1.4);
-    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.2);
+    opacity: 0.95;
   }
   100% {
-    left: 1.25rem;
+    left: -0.5rem;
     transform: translate(0, -50%) scale(1);
     opacity: 1;
   }
 }
 
-@keyframes split-circle-right {
+@keyframes big-split-circle-right {
   0% {
     right: 50%;
-    transform: translate(50%, -50%) scale(0.3);
+    transform: translate(50%, -50%) scale(0.1);
     opacity: 0;
   }
-  35% {
+  25% {
     right: 50%;
-    transform: translate(50%, -50%) scale(1.4);
-    opacity: 1;
+    transform: translate(50%, -50%) scale(1.2);
+    opacity: 0.95;
   }
   100% {
-    right: 1.25rem;
+    right: -0.5rem;
     transform: translate(0, -50%) scale(1);
     opacity: 1;
   }
 }
 
 .animate-split-left {
-  animation: split-circle-left 0.85s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation: big-split-circle-left 1.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
 
 .animate-split-right {
-  animation: split-circle-right 0.85s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation: big-split-circle-right 1.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
 
 /* Oval Pill Button Style from user reference */
