@@ -172,7 +172,7 @@ function ShopContent() {
               </div>
 
               {/* Inner Curved Rectangle with Inward 3D Shadowy Texture & Black Border */}
-              <div className="relative rounded-2xl border-2 border-black/20 bg-[#f4f4f2] p-1 shadow-[inset_0_3px_8px_rgba(0,0,0,0.09),inset_0_1px_3px_rgba(0,0,0,0.14)] transition-all focus-within:border-black focus-within:bg-white">
+              <div className="relative rounded-2xl border-2 border-black/20 bg-[#f4f4f2] p-1 shadow-[inset_0_3px_8px_rgba(0,0,0,0.09),inset_0_1px_3px_rgba(0,0,0,0.14)] transition-all">
                 <textarea
                   id="shopping-request"
                   name="shopping-request"
@@ -183,7 +183,7 @@ function ShopContent() {
                     if (voiceNotice) setVoiceNotice("");
                   }}
                   placeholder="For example: I need a lightweight backpack for a weekend trip under ₹6,000."
-                  className="w-full resize-none bg-transparent p-3 text-base text-slate-950 outline-none placeholder:text-black/35"
+                  className="w-full resize-none border-0 bg-transparent p-3 text-base text-slate-950 outline-none focus:outline-none focus:ring-0 placeholder:text-black/35"
                 />
               </div>
 

@@ -217,11 +217,7 @@ function PaymentContent() {
             </div>
 
             <div className="surface-card rounded-3xl p-8 shadow-sm sm:p-10">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-black text-white shadow-sm">
-                <span className="text-2xl font-extrabold">₹</span>
-              </div>
-
-              <span className="mt-5 inline-block text-xs font-bold uppercase tracking-[0.2em] text-black/45">
+              <span className="inline-block text-xs font-bold uppercase tracking-[0.2em] text-black/45">
                 Razorpay Checkout
               </span>
 

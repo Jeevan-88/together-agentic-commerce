@@ -61,28 +61,13 @@ export default function Header({ currentStep }: HeaderProps) {
         </Link>
       </div>
 
-      {/* Right: Actions & Step */}
+      {/* Right: Step Indicator if provided */}
       <div className="flex items-center gap-2 sm:gap-3">
         {currentStep && (
-          <span className="hidden rounded-full bg-black/5 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-black/60 md:inline-block">
+          <span className="rounded-full bg-black/5 px-3.5 py-1 text-[11px] font-bold uppercase tracking-wider text-black/70">
             {currentStep}
           </span>
         )}
-
-        <button
-          type="button"
-          onClick={toggleAccessibility}
-          aria-pressed={accessible}
-          className={`oval-pill-btn transition ${
-            accessible
-              ? "border-black bg-black text-white shadow-sm"
-              : "border-black/25 bg-white text-black hover:border-black"
-          }`}
-          title="Toggle High Contrast and Accessibility mode"
-          aria-label="Toggle Accessibility high-contrast mode"
-        >
-          A11y {accessible ? "ON" : "OFF"}
-        </button>
       </div>
     </header>
   );
