@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -47,6 +47,14 @@ function ShopContent() {
   const hasEnteredText = request.trim().length > 0;
   const isTextValid = request.trim().length >= 3;
   const canContinue = isTextValid && mode !== null;
+
+  const quickPrompts = [
+    "Lightweight travel backpack under ₹5,000",
+    "Active noise cancelling wireless headphones",
+    "Running sneakers with cushion sole",
+    "Fitness smartwatch with GPS battery",
+    "Foldable magnetic 3-in-1 travel charger",
+  ];
 
   function toggleVoiceInput() {
     if (!speechSupported) {
@@ -128,96 +136,119 @@ function ShopContent() {
   return (
     <main className="min-h-screen bg-[#f7f7f5] text-[#171717]">
       <div className="mx-auto flex min-h-screen max-w-5xl flex-col px-6 py-6 sm:px-10">
-        <Header currentStep="New Request" />
+        <Header currentStep="CO-SHOP" />
 
-        <section className="mx-auto w-full max-w-3xl py-12 sm:py-16">
-          <div className="mb-8">
+        <section className="mx-auto w-full max-w-3xl py-10 sm:py-14">
+          <div className="mb-8 text-center">
             <Link
               href="/"
-              className="text-xs font-semibold uppercase tracking-wider text-black/50 transition hover:text-black"
+              className="oval-pill-btn mb-4 border-black/20 bg-white text-[10px] text-black/60 transition hover:border-black hover:text-black"
             >
-              Back to Home
+              &larr; Back to Home
             </Link>
 
-            <h1 className="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl">
+            <h1 className="mt-2 text-4xl font-extrabold tracking-tight text-slate-950 sm:text-5xl">
               What are you looking for?
             </h1>
 
-            <p className="mt-3 max-w-2xl text-base text-black/60 sm:text-lg">
-              Tell us what you want to buy. You can shop for yourself or decide
-              together with a group.
+            <p className="mx-auto mt-3 max-w-xl text-base text-black/65">
+              Tell us what you want to buy. Shop solo or invite your group to compare
+              options and decide together.
             </p>
           </div>
 
-          {/* Request Input Card */}
-          <div className="surface-card rounded-3xl p-6 sm:p-7">
-            <div className="mb-3 flex items-center justify-between">
-              <label
-                htmlFor="shopping-request"
-                className="text-xs font-semibold uppercase tracking-wider text-black/60"
-              >
-                Shopping request
-              </label>
+          {/* Google Gemini Rainbow Glowing Chat / Request Box */}
+          <div className="gemini-rainbow-card">
+            <div className="gemini-rainbow-inner p-6 sm:p-7">
+              <div className="mb-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
+                  <label
+                    htmlFor="shopping-request"
+                    className="text-xs font-bold uppercase tracking-[0.16em] text-slate-900"
+                  >
+                    Shopping Request &bull; Intent Engine
+                  </label>
+                </div>
 
-              {/* Speak Button */}
-              <button
-                type="button"
-                onClick={toggleVoiceInput}
-                className={`flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-semibold transition ${
-                  isListening
-                    ? "border-red-500 bg-red-50 text-red-700 animate-pulse"
-                    : "border-black/15 bg-white text-slate-700 hover:border-black/30 hover:bg-black/5"
-                }`}
-                aria-pressed={isListening}
-                title={speechSupported ? "Speak your request using your microphone" : "Speech not supported"}
-              >
-                <span className={`h-2 w-2 rounded-full ${isListening ? "bg-red-600 animate-ping" : "bg-black/40"}`}></span>
-                <span>{isListening ? "Listening..." : "Speak"}</span>
-              </button>
-            </div>
-
-            <textarea
-              id="shopping-request"
-              name="shopping-request"
-              rows={4}
-              value={request}
-              onChange={(e) => {
-                setRequest(e.target.value);
-                if (voiceNotice) setVoiceNotice("");
-              }}
-              placeholder="For example: I need a lightweight backpack for a weekend trip under ₹6,000."
-              className="w-full resize-none rounded-2xl border border-black/15 bg-white p-4 text-base outline-none transition placeholder:text-black/30 focus:border-black/40"
-            />
-
-            {/* Validation & Status Messages */}
-            <div className="mt-2 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                {hasEnteredText && !isTextValid && (
-                  <p className="text-xs font-medium text-red-600">
-                    Please enter at least 3 characters.
-                  </p>
-                )}
-                {voiceNotice && (
-                  <p className="text-xs font-medium text-sky-700">
-                    {voiceNotice}
-                  </p>
-                )}
-                {!hasEnteredText && !voiceNotice && (
-                  <p className="text-xs text-black/40">
-                    Include your budget, capacity, weight, or preferences.
-                  </p>
-                )}
+                {/* Speak Button in Oval Pill */}
+                <button
+                  type="button"
+                  onClick={toggleVoiceInput}
+                  className={`oval-pill-btn text-xs transition ${
+                    isListening
+                      ? "border-red-500 bg-red-50 text-red-700 animate-pulse"
+                      : "border-black/20 bg-white text-slate-800 hover:border-black hover:bg-black/5"
+                  }`}
+                  aria-pressed={isListening}
+                  title={speechSupported ? "Speak using your microphone" : "Speech not supported"}
+                >
+                  <span className={`mr-1.5 h-2 w-2 rounded-full ${isListening ? "bg-red-600 animate-ping" : "bg-black/40"}`}></span>
+                  <span>{isListening ? "Listening..." : "Speak"}</span>
+                </button>
               </div>
 
-              <span className="shrink-0 text-right text-xs text-black/35">
-                {request.length}/500
-              </span>
+              <textarea
+                id="shopping-request"
+                name="shopping-request"
+                rows={4}
+                value={request}
+                onChange={(e) => {
+                  setRequest(e.target.value);
+                  if (voiceNotice) setVoiceNotice("");
+                }}
+                placeholder="For example: I need a lightweight travel backpack under ₹6,000, or noise-cancelling headphones for flights."
+                className="w-full resize-none rounded-2xl border border-black/10 bg-[#fafaf9] p-4 text-base text-slate-950 outline-none transition placeholder:text-black/35 focus:border-black/30 focus:bg-white"
+              />
+
+              {/* Quick Prompts Suggestion Chips */}
+              <div className="mt-3.5 flex flex-wrap items-center gap-1.5">
+                <span className="text-[11px] font-semibold text-black/45">Try:</span>
+                {quickPrompts.map((prompt, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setRequest(prompt);
+                      if (voiceNotice) setVoiceNotice("");
+                    }}
+                    className="rounded-full border border-black/10 bg-white px-2.5 py-1 text-[11px] text-black/70 transition hover:border-black/30 hover:bg-black/5"
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
+
+              {/* Validation & Status Messages */}
+              <div className="mt-4 flex flex-col gap-1 border-t border-black/5 pt-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  {hasEnteredText && !isTextValid && (
+                    <p className="text-xs font-medium text-red-600">
+                      Please enter at least 3 characters.
+                    </p>
+                  )}
+                  {voiceNotice && (
+                    <p className="text-xs font-medium text-sky-700">
+                      {voiceNotice}
+                    </p>
+                  )}
+                  {!hasEnteredText && !voiceNotice && (
+                    <p className="text-xs text-black/45">
+                      Include your budget, category, weight, or preferences.
+                    </p>
+                  )}
+                </div>
+
+                <span className="shrink-0 text-right text-xs font-mono text-black/40">
+                  {request.length}/500
+                </span>
+              </div>
             </div>
           </div>
 
           {/* Mode Selection */}
           <div className="mt-8">
-            <h2 className="mb-4 text-xs font-semibold uppercase tracking-wider text-black/60">
+            <h2 className="mb-4 text-center text-xs font-bold uppercase tracking-[0.2em] text-black/55">
               How do you want to buy?
             </h2>
 
@@ -226,42 +257,42 @@ function ShopContent() {
                 type="button"
                 aria-pressed={mode === "solo"}
                 onClick={() => setMode("solo")}
-                className={`surface-card rounded-2xl p-5 text-left transition ${
+                className={`surface-card rounded-2xl p-6 text-left transition ${
                   mode === "solo"
-                    ? "border-black bg-black text-white shadow-sm ring-1 ring-black"
+                    ? "border-black bg-black text-white shadow-md ring-2 ring-black"
                     : "hover:border-black/30"
                 }`}
               >
                 <div className="flex items-start justify-between">
-                  <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-xl text-sm font-semibold ${
+                  <span
+                    className={`oval-pill-btn text-[10px] ${
                       mode === "solo"
-                        ? "bg-white text-black"
-                        : "bg-black text-white"
+                        ? "border-white/40 bg-white/10 text-white"
+                        : "border-black/20 text-black/60"
                     }`}
                   >
-                    S
-                  </div>
+                    Solo Mode
+                  </span>
 
                   <span
-                    className={`text-xs font-semibold ${
-                      mode === "solo" ? "text-white/60" : "text-black/40"
+                    className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
+                      mode === "solo" ? "bg-white text-black" : "border border-black/20 text-transparent"
                     }`}
                   >
-                    Solo
+                    ✓
                   </span>
                 </div>
 
-                <h3 className="mt-4 text-lg font-semibold">
+                <h3 className="mt-4 text-lg font-bold">
                   Buy for myself
                 </h3>
 
                 <p
                   className={`mt-1.5 text-xs leading-5 ${
-                    mode === "solo" ? "text-white/70" : "text-black/55"
+                    mode === "solo" ? "text-white/75" : "text-black/60"
                   }`}
                 >
-                  Direct discovery, instant recommendation, and single-approval payment.
+                  Direct catalog discovery, instant product recommendation, and single-click checkout.
                 </p>
               </button>
 
@@ -269,70 +300,70 @@ function ShopContent() {
                 type="button"
                 aria-pressed={mode === "group"}
                 onClick={() => setMode("group")}
-                className={`surface-card rounded-2xl p-5 text-left transition ${
+                className={`surface-card rounded-2xl p-6 text-left transition ${
                   mode === "group"
-                    ? "border-black bg-black text-white shadow-sm ring-1 ring-black"
+                    ? "border-black bg-black text-white shadow-md ring-2 ring-black"
                     : "hover:border-black/30"
                 }`}
               >
                 <div className="flex items-start justify-between">
-                  <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-xl text-sm font-semibold ${
+                  <span
+                    className={`oval-pill-btn text-[10px] ${
                       mode === "group"
-                        ? "bg-white text-black"
-                        : "bg-black text-white"
+                        ? "border-white/40 bg-white/10 text-white"
+                        : "border-black/20 text-black/60"
                     }`}
                   >
-                    G
-                  </div>
+                    Group Mode
+                  </span>
 
                   <span
-                    className={`text-xs font-semibold ${
-                      mode === "group" ? "text-white/60" : "text-black/40"
+                    className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
+                      mode === "group" ? "bg-white text-black" : "border border-black/20 text-transparent"
                     }`}
                   >
-                    Group
+                    ✓
                   </span>
                 </div>
 
-                <h3 className="mt-4 text-lg font-semibold">
+                <h3 className="mt-4 text-lg font-bold">
                   Buy together
                 </h3>
 
                 <p
                   className={`mt-1.5 text-xs leading-5 ${
-                    mode === "group" ? "text-white/70" : "text-black/55"
+                    mode === "group" ? "text-white/75" : "text-black/60"
                   }`}
                 >
-                  Link your shopping group, evaluate together, and confirm before paying.
+                  Link your shopping group, bring everyone into consensus, and approve together.
                 </p>
               </button>
             </div>
           </div>
 
-          {/* Continue Action */}
-          <div className="mt-10 flex items-center justify-between gap-4 border-t border-black/10 pt-6">
-            <p className="text-xs font-medium text-black/45">
+          {/* Continue Action in Oval Pill */}
+          <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-black/10 pt-6 sm:flex-row">
+            <p className="text-xs font-medium text-black/50">
               {mode === "solo"
                 ? "Solo mode selected"
                 : mode === "group"
                   ? groupId
                     ? "Group mode selected (group connected)"
                     : "Group mode selected"
-                  : "Please select Solo or Group mode"}
+                  : "Please choose Solo or Group mode"}
             </p>
 
             <button
               type="button"
               onClick={handleContinue}
               disabled={!canContinue}
-              className={`rounded-xl px-6 py-3.5 text-sm font-semibold transition ${
+              className={`oval-pill-btn px-8 py-3 text-sm font-bold transition ${
                 canContinue
-                  ? "bg-black text-white shadow-sm hover:bg-black/80"
-                  : "cursor-not-allowed bg-black/10 text-black/35"
+                  ? "border-black bg-black text-white shadow-sm hover:bg-black/80"
+                  : "cursor-not-allowed border-black/10 bg-black/10 text-black/30"
               }`}
             >
-              Continue to products
+              Continue to Catalog &rarr;
             </button>
           </div>
         </section>

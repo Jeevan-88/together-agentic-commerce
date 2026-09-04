@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -8,9 +8,16 @@ import Header from "../../../components/Header";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 type ProductMetadata = {
+  imageUrl?: string;
+  category?: string;
+  originalPricePaise?: number;
+  discountPercent?: number;
+  rating?: number;
+  reviewsCount?: number;
   capacity?: string;
   weight?: string;
   feature?: string;
+  keywords?: string[];
   [key: string]: unknown;
 };
 
@@ -28,6 +35,13 @@ type Product = {
   metadata?: ProductMetadata | null;
 };
 
+type RecommendationMatch = {
+  product: Product;
+  score: number;
+  reasons: string[];
+  matchedCriteria: string[];
+};
+
 function ResultsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -37,36 +51,57 @@ function ResultsContent() {
   const groupId = searchParams.get("groupId") || "";
 
   const [products, setProducts] = useState<Product[]>([]);
+  const [recommendation, setRecommendation] = useState<RecommendationMatch | null>(null);
+  const [activeCategory, setActiveCategory] = useState("All");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const categories = ["All", "Bags", "Audio", "Wearables", "Footwear", "Tech"];
+
   useEffect(() => {
-    async function loadProducts() {
+    async function loadCatalogAndRecommendations() {
       try {
         setLoading(true);
         setError("");
 
-        const response = await fetch(`${API_URL}/api/products`);
-        const data = await response.json();
+        // 1. Fetch entire active catalog
+        const productsResponse = await fetch(`${API_URL}/api/products`);
+        const productsData = await productsResponse.json();
 
-        if (!response.ok) {
-          throw new Error(data.message || "Unable to load products");
+        if (!productsResponse.ok) {
+          throw new Error(productsData.message || "Unable to load products");
         }
 
-        setProducts(data.products || []);
+        const allProducts: Product[] = productsData.products || [];
+        setProducts(allProducts);
+
+        // 2. If request text is provided, fetch scored recommendations
+        if (request && request.trim().length >= 3) {
+          try {
+            const recResponse = await fetch(`${API_URL}/api/products/recommendations`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ requestText: request.trim() }),
+            });
+            const recData = await recResponse.json();
+            if (recResponse.ok && recData.recommendation) {
+              setRecommendation(recData.recommendation);
+            }
+          } catch (e) {
+            console.error("Failed to fetch recommendation:", e);
+          }
+        }
       } catch (err) {
         setError(
-          err instanceof Error
-            ? err.message
-            : "Unable to load products",
+          err instanceof Error ? err.message : "Unable to load product catalog",
         );
       } finally {
         setLoading(false);
       }
     }
 
-    loadProducts();
-  }, []);
+    loadCatalogAndRecommendations();
+  }, [request]);
 
   function handleChoose(product: Product) {
     const merchantName =
@@ -83,71 +118,139 @@ function ResultsContent() {
       "price",
       `₹${(product.pricePaise / 100).toLocaleString("en-IN")}`,
     );
-    params.set("request", request);
+    params.set("request", request || "Direct catalog purchase");
     params.set("mode", mode);
 
     if (mode === "group" && groupId) {
       params.set("groupId", groupId);
     }
 
+    if (product.metadata?.imageUrl) {
+      params.set("imageUrl", product.metadata.imageUrl);
+    }
+    if (product.metadata?.originalPricePaise) {
+      params.set("originalPricePaise", String(product.metadata.originalPricePaise));
+    }
+    if (product.metadata?.discountPercent) {
+      params.set("discountPercent", String(product.metadata.discountPercent));
+    }
+    if (product.metadata?.category) {
+      params.set("category", product.metadata.category);
+    }
+    if (product.metadata?.rating) {
+      params.set("rating", String(product.metadata.rating));
+    }
+
     router.push(`/shop/proposal?${params.toString()}`);
   }
 
+  // Filter products by selected category
+  const filteredProducts = products.filter((p) => {
+    if (activeCategory === "All") return true;
+    const cat = p.metadata?.category;
+    return cat?.toLowerCase() === activeCategory.toLowerCase();
+  });
+
   return (
     <main className="min-h-screen bg-[#f7f7f5] text-[#171717]">
-      <div className="mx-auto flex min-h-screen max-w-6xl flex-col px-6 py-6 sm:px-10">
-        <Header currentStep="Product Options" />
+      <div className="mx-auto flex min-h-screen max-w-7xl flex-col px-6 py-6 sm:px-10">
+        <Header currentStep="Catalog & Matching" />
 
         <div className="py-10">
-          <div className="mb-8">
-            <Link
-              href={`/shop?${new URLSearchParams({ mode, ...(groupId ? { groupId } : {}) }).toString()}`}
-              className="text-xs font-semibold uppercase tracking-wider text-black/50 transition hover:text-black"
-            >
-              Back to Request
-            </Link>
+          {/* Header row with back button and title */}
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <Link
+                href={`/shop?${new URLSearchParams({ mode, ...(groupId ? { groupId } : {}) }).toString()}`}
+                className="oval-pill-btn mb-3 border-black/20 bg-white text-[10px] text-black/60 transition hover:border-black hover:text-black"
+              >
+                &larr; Back to Search
+              </Link>
+              <h1 className="text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">
+                Product Catalog & Recommendations
+              </h1>
+              <p className="mt-1 text-sm text-black/60">
+                Explore real products with real-time discounts, verified pricing, and instant Razorpay checkout.
+              </p>
+            </div>
 
-            <h1 className="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl">
-              Compare options
-            </h1>
-
-            <p className="mt-3 max-w-2xl text-base text-black/60">
-              We evaluated your request against available merchant products.
-              Choose an option to continue to approval and checkout.
-            </p>
-
-            {/* Request Summary Tag */}
-            <div className="surface-card mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl p-4 sm:px-6">
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-semibold uppercase tracking-wider text-black/45">
-                  Request
+            {/* Shopping context tags */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="oval-pill-btn border-black bg-black text-white text-[11px]">
+                {mode === "group" ? "Group Shopping" : "Solo Shopping"}
+              </span>
+              {mode === "group" && groupId && (
+                <span className="oval-pill-btn border-black/20 bg-white text-black text-[11px]">
+                  Group Connected
                 </span>
-                <span className="text-sm font-medium text-black/80">
-                  &ldquo;{request || "Any suitable option"}&rdquo;
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="rounded-full bg-black px-3 py-1 text-xs font-semibold text-white">
-                  {mode === "group" ? "Group Shopping" : "Solo Shopping"}
-                </span>
-                {mode === "group" && groupId && (
-                  <span className="rounded-full border border-black/15 bg-white px-3 py-1 text-xs font-medium text-black/60">
-                    Group Connected
-                  </span>
-                )}
-              </div>
+              )}
             </div>
           </div>
 
+          {/* Active Query Banner if request exists */}
+          {request && (
+            <div className="gemini-rainbow-card mb-8">
+              <div className="gemini-rainbow-inner flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-50 text-blue-600 text-xs font-bold">
+                    AI
+                  </span>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-black/40">
+                      Evaluated Intent
+                    </span>
+                    <p className="text-sm font-semibold text-slate-950">
+                      &ldquo;{request}&rdquo;
+                    </p>
+                  </div>
+                </div>
+
+                {recommendation && (
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="rounded-full bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-800 border border-emerald-200">
+                      Top Match: {recommendation.score}% Match
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Category Filter Pills (Oval Pill Format) */}
+          <div className="mb-8 flex items-center gap-2 overflow-x-auto pb-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-black/40 mr-1 shrink-0">
+              Filter:
+            </span>
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setActiveCategory(cat)}
+                className={`oval-pill-btn text-xs shrink-0 transition ${
+                  activeCategory === cat
+                    ? "border-black bg-black text-white shadow-sm"
+                    : "border-black/15 bg-white text-black/70 hover:border-black hover:text-black"
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+            <span className="ml-auto text-xs text-black/45 font-medium shrink-0">
+              Showing {filteredProducts.length} items
+            </span>
+          </div>
+
+          {/* Loading state */}
           {loading && (
-            <div className="surface-inset rounded-3xl p-12 text-center">
-              <p className="text-sm font-medium text-black/50">
-                Finding the best matching products...
+            <div className="surface-inset rounded-3xl p-16 text-center">
+              <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-black border-t-transparent"></div>
+              <p className="mt-4 text-sm font-semibold text-black/60">
+                Matching catalog with real-time discounts...
               </p>
             </div>
           )}
 
+          {/* Error state */}
           {error && (
             <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
               <p className="font-semibold">Unable to load catalog</p>
@@ -155,82 +258,153 @@ function ResultsContent() {
               <button
                 type="button"
                 onClick={() => window.location.reload()}
-                className="mt-4 rounded-xl bg-black px-4 py-2 text-xs font-semibold text-white"
+                className="oval-pill-btn mt-4 border-red-700 bg-red-700 text-white text-xs"
               >
                 Retry
               </button>
             </div>
           )}
 
-          {!loading && !error && products.length === 0 && (
-            <div className="surface-inset rounded-3xl p-12 text-center">
-              <p className="text-base font-semibold">No products currently match</p>
+          {/* Empty state */}
+          {!loading && !error && filteredProducts.length === 0 && (
+            <div className="surface-inset rounded-3xl p-16 text-center">
+              <p className="text-base font-semibold">No products in this category</p>
               <p className="mt-2 text-sm text-black/50">
-                Try adjusting your request parameters or price range.
+                Try selecting &ldquo;All&rdquo; to browse the full catalog.
               </p>
             </div>
           )}
 
-          {!loading && !error && products.length > 0 && (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {products.map((product) => {
+          {/* Products Grid */}
+          {!loading && !error && filteredProducts.length > 0 && (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {filteredProducts.map((product) => {
                 const merchantName =
                   typeof product.merchant === "string"
                     ? product.merchant
                     : product.merchant?.name || "Merchant";
 
                 const metadata = product.metadata || {};
-                const highlights = [
-                  metadata.capacity ? `Capacity: ${metadata.capacity}` : null,
-                  metadata.weight ? `Weight: ${metadata.weight}` : null,
-                  metadata.feature ? metadata.feature : null,
-                ].filter(Boolean) as string[];
+                const imageUrl = metadata.imageUrl || "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&auto=format&fit=crop&q=80";
+                const originalPricePaise = metadata.originalPricePaise;
+                const discountPercent = metadata.discountPercent;
+                const rating = metadata.rating || 4.8;
+                const reviewsCount = metadata.reviewsCount || 120;
+                const category = metadata.category || "Commerce";
+
+                const isTopMatch = recommendation && recommendation.product.id === product.id;
 
                 return (
                   <article
                     key={product.id}
-                    className="surface-card surface-card-interactive flex flex-col justify-between rounded-3xl p-6 sm:p-7"
+                    className={`surface-card surface-card-interactive flex flex-col justify-between overflow-hidden rounded-3xl border transition ${
+                      isTopMatch ? "ring-2 ring-blue-500 shadow-lg" : "border-black/10"
+                    }`}
                   >
                     <div>
-                      <div className="flex items-start justify-between gap-3">
-                        <span className="text-[11px] font-semibold uppercase tracking-wider text-black/45">
-                          {merchantName}
-                        </span>
+                      {/* Product Image Container */}
+                      <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-100">
+                        <img
+                          src={imageUrl}
+                          alt={product.name}
+                          className="h-full w-full object-cover transition duration-300 hover:scale-105"
+                          loading="lazy"
+                        />
 
-                        <span className="rounded-full bg-black/5 px-2.5 py-0.5 text-[11px] font-semibold text-black/60">
-                          ₹{(product.pricePaise / 100).toLocaleString("en-IN")}
-                        </span>
+                        {/* Badges on Image */}
+                        <div className="absolute left-3 top-3 flex items-center gap-1.5">
+                          <span className="rounded-full bg-black/80 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
+                            {category}
+                          </span>
+                          {discountPercent && (
+                            <span className="rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-bold uppercase text-white shadow-sm">
+                              {discountPercent}% OFF
+                            </span>
+                          )}
+                        </div>
+
+                        {isTopMatch && (
+                          <div className="absolute right-3 top-3">
+                            <span className="rounded-full bg-blue-600 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide text-white shadow-md">
+                              AI Best Match
+                            </span>
+                          </div>
+                        )}
                       </div>
 
-                      <h2 className="mt-2 text-xl font-semibold text-slate-950">
-                        {product.name}
-                      </h2>
-
-                      {product.description && (
-                        <p className="mt-2.5 text-xs leading-5 text-black/60">
-                          {product.description}
-                        </p>
-                      )}
-
-                      {highlights.length > 0 && (
-                        <div className="mt-5 space-y-1.5 border-t border-black/5 pt-4">
-                          {highlights.map((h, i) => (
-                            <div key={i} className="flex items-center gap-2 text-xs text-black/70">
-                              <span className="h-1 w-1 rounded-full bg-black/40"></span>
-                              <span>{h}</span>
-                            </div>
-                          ))}
+                      {/* Content Section */}
+                      <div className="p-6">
+                        <div className="flex items-center justify-between text-xs text-black/50">
+                          <span className="font-semibold uppercase tracking-wider text-slate-700">
+                            {merchantName}
+                          </span>
+                          <span className="flex items-center gap-1 font-semibold text-amber-600">
+                            ★ {rating} <span className="text-black/35 font-normal">({reviewsCount})</span>
+                          </span>
                         </div>
-                      )}
+
+                        <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-950">
+                          {product.name}
+                        </h2>
+
+                        {product.description && (
+                          <p className="mt-2 text-xs leading-relaxed text-black/60 line-clamp-2">
+                            {product.description}
+                          </p>
+                        )}
+
+                        {/* Price Display */}
+                        <div className="mt-4 flex items-baseline gap-2.5">
+                          <span className="text-2xl font-extrabold text-slate-950">
+                            ₹{(product.pricePaise / 100).toLocaleString("en-IN")}
+                          </span>
+                          {originalPricePaise && (
+                            <span className="text-xs text-black/40 line-through">
+                              ₹{(originalPricePaise / 100).toLocaleString("en-IN")}
+                            </span>
+                          )}
+                          <span className="text-[11px] font-semibold text-emerald-700">
+                            Test Checkout
+                          </span>
+                        </div>
+
+                        {/* Specs & Highlights */}
+                        <div className="mt-4 flex flex-wrap gap-1.5 border-t border-black/5 pt-3">
+                          {metadata.capacity && (
+                            <span className="rounded-md bg-black/5 px-2 py-0.5 text-[11px] text-black/70">
+                              {metadata.capacity}
+                            </span>
+                          )}
+                          {metadata.weight && (
+                            <span className="rounded-md bg-black/5 px-2 py-0.5 text-[11px] text-black/70">
+                              {metadata.weight}
+                            </span>
+                          )}
+                          {metadata.feature && (
+                            <span className="rounded-md bg-black/5 px-2 py-0.5 text-[11px] text-black/70">
+                              {metadata.feature}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Match Reasons if available */}
+                        {isTopMatch && recommendation.reasons?.length > 0 && (
+                          <div className="mt-3.5 rounded-xl bg-blue-50/70 p-2.5 text-[11px] text-blue-900">
+                            <span className="font-bold uppercase tracking-wider">Match Reason: </span>
+                            {recommendation.reasons[0]}
+                          </div>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="mt-7 pt-4 border-t border-black/5">
+                    {/* Choose Button in Oval Pill */}
+                    <div className="p-6 pt-0">
                       <button
                         type="button"
                         onClick={() => handleChoose(product)}
-                        className="w-full rounded-xl bg-black py-3.5 text-center text-sm font-semibold text-white shadow-sm transition hover:bg-black/80"
+                        className="oval-pill-btn w-full border-black bg-black py-3 text-xs font-bold text-white shadow-sm transition hover:bg-black/80"
                       >
-                        Select this product
+                        Choose this product &rarr;
                       </button>
                     </div>
                   </article>
@@ -249,8 +423,8 @@ export default function ResultsPage() {
     <Suspense
       fallback={
         <main className="min-h-screen bg-[#f7f7f5] text-[#171717]">
-          <div className="mx-auto flex min-h-screen max-w-6xl items-center justify-center px-6">
-            <p className="text-sm text-black/50">Loading results...</p>
+          <div className="mx-auto flex min-h-screen max-w-7xl items-center justify-center px-6">
+            <p className="text-sm text-black/50">Loading catalog results...</p>
           </div>
         </main>
       }
