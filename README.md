@@ -2,7 +2,13 @@
 
 <video src="./demo/together-demo.mp4" controls width="100%"></video>
 
-[https://together-web-kohl.vercel.app/](https://together-web-kohl.vercel.app/)
+▶ **[Click here to watch the full demo video (together-demo.mp4)](./demo/together-demo.mp4)**
+
+**Live Website**: [https://together-web-kohl.vercel.app/](https://together-web-kohl.vercel.app/)
+
+![Shopping Request Interface](docs/images/together-search-interface.png)
+
+![Product Catalog and Recommendations](docs/images/together-catalog-recommendations.png)
 
 > **Razorpay Buildathon: AI Growth & Agentic Commerce**  
 > **Goal**: Grow the merchant’s revenue, and make them sellable to AI buyers end-to-end.  
