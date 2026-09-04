@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -167,39 +167,26 @@ function ShopContent() {
                     htmlFor="shopping-request"
                     className="text-xs font-bold uppercase tracking-[0.16em] text-slate-900"
                   >
-                    Shopping Request &bull; Intent Engine
+                    SHOPPING REQUEST
                   </label>
                 </div>
-
-                {/* Speak Button in Oval Pill */}
-                <button
-                  type="button"
-                  onClick={toggleVoiceInput}
-                  className={`oval-pill-btn text-xs transition ${
-                    isListening
-                      ? "border-red-500 bg-red-50 text-red-700 animate-pulse"
-                      : "border-black/20 bg-white text-slate-800 hover:border-black hover:bg-black/5"
-                  }`}
-                  aria-pressed={isListening}
-                  title={speechSupported ? "Speak using your microphone" : "Speech not supported"}
-                >
-                  <span className={`mr-1.5 h-2 w-2 rounded-full ${isListening ? "bg-red-600 animate-ping" : "bg-black/40"}`}></span>
-                  <span>{isListening ? "Listening..." : "Speak"}</span>
-                </button>
               </div>
 
-              <textarea
-                id="shopping-request"
-                name="shopping-request"
-                rows={4}
-                value={request}
-                onChange={(e) => {
-                  setRequest(e.target.value);
-                  if (voiceNotice) setVoiceNotice("");
-                }}
-                placeholder="For example: I need a lightweight travel backpack under ₹6,000, or noise-cancelling headphones for flights."
-                className="w-full resize-none rounded-2xl border border-black/10 bg-[#fafaf9] p-4 text-base text-slate-950 outline-none transition placeholder:text-black/35 focus:border-black/30 focus:bg-white"
-              />
+              {/* Inner Curved Rectangle with Inward 3D Shadowy Texture & Black Border */}
+              <div className="relative rounded-2xl border-2 border-black/20 bg-[#f4f4f2] p-1 shadow-[inset_0_3px_8px_rgba(0,0,0,0.09),inset_0_1px_3px_rgba(0,0,0,0.14)] transition-all focus-within:border-black focus-within:bg-white">
+                <textarea
+                  id="shopping-request"
+                  name="shopping-request"
+                  rows={4}
+                  value={request}
+                  onChange={(e) => {
+                    setRequest(e.target.value);
+                    if (voiceNotice) setVoiceNotice("");
+                  }}
+                  placeholder="For example: I need a lightweight backpack for a weekend trip under ₹6,000."
+                  className="w-full resize-none bg-transparent p-3 text-base text-slate-950 outline-none placeholder:text-black/35"
+                />
+              </div>
 
               {/* Quick Prompts Suggestion Chips */}
               <div className="mt-3.5 flex flex-wrap items-center gap-1.5">
@@ -219,8 +206,8 @@ function ShopContent() {
                 ))}
               </div>
 
-              {/* Validation & Status Messages */}
-              <div className="mt-4 flex flex-col gap-1 border-t border-black/5 pt-3 sm:flex-row sm:items-center sm:justify-between">
+              {/* Validation, Status & Voice Microphone Circle beside 0/500 */}
+              <div className="mt-4 flex flex-col gap-2 border-t border-black/5 pt-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   {hasEnteredText && !isTextValid && (
                     <p className="text-xs font-medium text-red-600">
@@ -234,14 +221,43 @@ function ShopContent() {
                   )}
                   {!hasEnteredText && !voiceNotice && (
                     <p className="text-xs text-black/45">
-                      Include your budget, category, weight, or preferences.
+                      Include your budget, capacity, weight, or preferences.
                     </p>
                   )}
                 </div>
 
-                <span className="shrink-0 text-right text-xs font-mono text-black/40">
-                  {request.length}/500
-                </span>
+                <div className="flex items-center gap-3 self-end sm:self-auto">
+                  <span className="text-xs font-mono text-black/40">
+                    {request.length}/500
+                  </span>
+
+                  {/* Black Circle Voice Microphone Button */}
+                  <button
+                    type="button"
+                    onClick={toggleVoiceInput}
+                    className={`flex h-9 w-9 items-center justify-center rounded-full shadow-md transition ${
+                      isListening
+                        ? "bg-red-600 text-white animate-pulse ring-4 ring-red-200"
+                        : "bg-black text-white hover:bg-black/80 hover:scale-105 active:scale-95"
+                    }`}
+                    title={speechSupported ? "Speak using microphone" : "Speech recognition not supported"}
+                    aria-label="Voice input microphone"
+                  >
+                    <svg
+                      className="h-4.5 w-4.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      strokeWidth="2"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 10-6 0v8.25a3 3 0 10-6 0v8.25a3 3 0 003 3z"
+                      />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
