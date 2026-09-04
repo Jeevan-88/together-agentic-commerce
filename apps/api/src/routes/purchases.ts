@@ -18,8 +18,8 @@ const purchaseSchema = z.object({
 
 const paymentVerificationSchema = z.object({
   razorpayPaymentId: z.string().min(1),
-  razorpayOrderId: z.string().min(1),
-  razorpaySignature: z.string().min(1),
+  razorpayOrderId: z.string().min(1).optional(),
+  razorpaySignature: z.string().min(1).optional(),
 });
 
 const DEMO_USER_EMAIL = "demo@together.local";
@@ -690,7 +690,7 @@ router.post("/:id/verify-payment", async (req, res) => {
       });
     }
 
-    if (storedOrderId !== razorpayOrderId) {
+    if (razorpayOrderId && storedOrderId !== razorpayOrderId) {
       return res.status(400).json({
         success: false,
         message: "Payment order ID does not match the purchase",
@@ -740,31 +740,106 @@ router.post("/:id/verify-payment", async (req, res) => {
       });
     }
 
-    const signaturesMatch = verifySignature(
-      storedOrderId,
-      razorpayPaymentId,
-      razorpaySignature,
-      keySecret,
-    );
+    let verifiedBySignature = false;
+    let razorpayStatus: string | undefined;
 
-    if (!signaturesMatch) {
-      await prisma.auditLog.create({
-        data: {
-          purchaseId: purchase.id,
-          action: "PAYMENT_FAILED",
-          actorId: purchase.userId,
-          details: {
-            reason: "INVALID_SIGNATURE",
-            razorpayOrderId,
+    if (razorpaySignature && razorpayOrderId) {
+      verifiedBySignature = verifySignature(
+        storedOrderId,
+        razorpayPaymentId,
+        razorpaySignature,
+        keySecret,
+      );
+
+      if (!verifiedBySignature) {
+        await prisma.auditLog.create({
+          data: {
+            purchaseId: purchase.id,
+            action: "PAYMENT_FAILED",
+            actorId: purchase.userId,
+            details: {
+              reason: "INVALID_SIGNATURE",
+              razorpayOrderId,
+            },
           },
-        },
-      });
+        });
 
-      return res.status(400).json({
-        success: false,
-        message: "Payment signature verification failed",
-      });
+        return res.status(400).json({
+          success: false,
+          message: "Payment signature verification failed",
+        });
+      }
+    } else {
+      const razorpayPayment = await razorpay.payments.fetch(
+        razorpayPaymentId,
+      );
+
+      if (razorpayPayment.id !== razorpayPaymentId) {
+        return res.status(400).json({
+          success: false,
+          message: "Payment ID could not be verified",
+        });
+      }
+
+      if (razorpayPayment.order_id !== storedOrderId) {
+        await prisma.auditLog.create({
+          data: {
+            purchaseId: purchase.id,
+            action: "PAYMENT_FAILED",
+            actorId: purchase.userId,
+            details: {
+              reason: "PAYMENT_ORDER_MISMATCH",
+              razorpayPaymentId,
+              storedOrderId,
+              razorpayOrderId: razorpayPayment.order_id ?? null,
+            },
+          },
+        });
+
+        return res.status(400).json({
+          success: false,
+          message: "Payment does not belong to this order",
+        });
+      }
+
+      if (razorpayPayment.amount !== purchase.totalPaise) {
+        return res.status(400).json({
+          success: false,
+          message: "Payment amount does not match purchase total",
+        });
+      }
+
+      if (razorpayPayment.currency !== purchase.currency) {
+        return res.status(400).json({
+          success: false,
+          message: "Payment currency does not match purchase currency",
+        });
+      }
+
+      razorpayStatus = razorpayPayment.status;
+
+      if (razorpayStatus !== "authorized" && razorpayStatus !== "captured") {
+        await prisma.auditLog.create({
+          data: {
+            purchaseId: purchase.id,
+            action: "PAYMENT_FAILED",
+            actorId: purchase.userId,
+            details: {
+              reason: "PAYMENT_NOT_SUCCESSFUL",
+              razorpayPaymentId,
+              razorpayStatus,
+            },
+          },
+        });
+
+        return res.status(400).json({
+          success: false,
+          message: `Payment is not successful. Current status: ${razorpayStatus}`,
+        });
+      }
     }
+
+    const shouldCapture = razorpayStatus === "captured";
 
     const updated = await prisma.$transaction(
       async (tx: Prisma.TransactionClient) => {
@@ -773,8 +848,9 @@ router.post("/:id/verify-payment", async (req, res) => {
             purchaseId: purchase.id,
           },
           data: {
-            status: "AUTHORIZED",
+            status: shouldCapture ? "CAPTURED" : "AUTHORIZED",
             razorpayPaymentId,
+            ...(shouldCapture ? { capturedAt: new Date() } : {}),
           },
         });
 
@@ -783,15 +859,19 @@ router.post("/:id/verify-payment", async (req, res) => {
             id: purchase.id,
           },
           data: {
-            status: "PAYMENT_PROCESSING",
+            status: shouldCapture ? "PAID" : "PAYMENT_PROCESSING",
+            ...(shouldCapture ? { paidAt: new Date() } : {}),
             auditLogs: {
               create: {
                 action: "PAYMENT_CONFIRMED",
                 actorId: purchase.userId,
                 details: {
-                  razorpayOrderId,
+                  razorpayOrderId: storedOrderId,
                   razorpayPaymentId,
-                  verification: "SIGNATURE_VALID",
+                  verification: verifiedBySignature
+                    ? "SIGNATURE_VALID"
+                    : "SERVER_SIDE_PAYMENT_FETCH",
+                  razorpayStatus: razorpayStatus ?? null,
                 },
               },
             },
@@ -807,7 +887,9 @@ router.post("/:id/verify-payment", async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Payment signature verified",
+      message: shouldCapture
+        ? "Payment verified and captured"
+        : "Payment signature verified",
       payment: {
         id: updated.payment.id,
         status: updated.payment.status,
