@@ -302,22 +302,6 @@ function ShopContent() {
                   >
                     Solo Mode
                   </span>
-
-                  {mode === "solo" ? (
-                    <video
-                      key="solo-coin-badge"
-                      src="/rupee-coin.webm"
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
-                      className="animate-coin-l-to-r h-7 w-7 rounded-full object-cover shadow-md"
-                    />
-                  ) : (
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full border border-black/20 text-black/30">
-                      •
-                    </span>
-                  )}
                 </div>
 
                 <h3 className="relative z-20 mt-4 text-lg font-bold">
@@ -366,22 +350,6 @@ function ShopContent() {
                   >
                     Group Mode
                   </span>
-
-                  {mode === "group" ? (
-                    <video
-                      key="group-coin-badge"
-                      src="/rupee-coin.webm"
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
-                      className="animate-coin-r-to-l h-7 w-7 rounded-full object-cover shadow-md"
-                    />
-                  ) : (
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full border border-black/20 text-black/30">
-                      •
-                    </span>
-                  )}
                 </div>
 
                 <h3 className="relative z-20 mt-4 text-lg font-bold">
