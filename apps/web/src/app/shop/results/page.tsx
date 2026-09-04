@@ -302,24 +302,35 @@ function ResultsContent() {
     currentPage * itemsPerPage,
   );
 
-  // Compute Top 3 Keyword Matched items for interactive choice banner
-  const top3Matches = (() => {
-    if (!request || request.trim().length < 3) return [];
-    const reqWords = request.toLowerCase().split(/\s+/).filter((w) => w.length >= 3);
+  // Voice Speech Assistant for results page
+  const [hasSpoken, setHasSpoken] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
-    return [...products]
-      .map((p) => {
-        const text = `${p.name} ${p.description || ""} ${JSON.stringify(p.metadata || {})}`.toLowerCase();
-        let matches = 0;
-        reqWords.forEach((w) => {
-          if (text.includes(w)) matches++;
-        });
-        return { product: p, matches };
-      })
-      .sort((a, b) => b.matches - a.matches)
-      .slice(0, 3)
-      .map((m) => m.product);
-  })();
+  function speakResultsSummary(productName?: string, priceStr?: string) {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    const text = productName
+      ? `I evaluated your request for ${request}. The top recommendation is ${productName} for ${priceStr}. Click any item to select it.`
+      : `Here are the top catalog results for ${request}. Click any item to continue.`;
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.95;
+    utterance.pitch = 1.0;
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    window.speechSynthesis.speak(utterance);
+  }
+
+  useEffect(() => {
+    if (!request || hasSpoken || loading) return;
+    const topItem = recommendation?.product || paginatedProducts[0];
+    if (topItem) {
+      const priceStr = `₹${(topItem.pricePaise / 100).toLocaleString("en-IN")}`;
+      speakResultsSummary(topItem.name, priceStr);
+      setHasSpoken(true);
+    }
+  }, [request, recommendation, paginatedProducts, loading, hasSpoken]);
 
   return (
     <main className="min-h-screen bg-[#f7f7f5] text-[#171717]">
@@ -374,68 +385,33 @@ function ResultsContent() {
                   </p>
                 </div>
 
-                {recommendation && (
-                  <div className="flex items-center gap-2 text-xs">
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  {recommendation && (
                     <span className="oval-pill-btn border-black/20 bg-white text-slate-900 text-[11px] font-bold shadow-sm">
                       Top Match: {recommendation.score}% Match
                     </span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+                  )}
 
-          {/* Top 3 Interactive AI Keyword Match Selector */}
-          {request && top3Matches.length > 0 && (
-            <div className="mb-8 rounded-3xl border-2 border-black bg-gradient-to-r from-slate-900 via-black to-slate-900 p-6 text-white shadow-xl">
-              <div className="mb-3 flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-lg">
-                    🤖
-                  </span>
-                  <div>
-                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-sky-400">
-                      AI Keyword Commerce Assistant
-                    </span>
-                    <h3 className="text-base font-extrabold text-white">
-                      Which product would you like to choose?
-                    </h3>
-                  </div>
-                </div>
-                <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-sky-300 font-semibold hidden sm:inline-block">
-                  Top 3 Filtered Matches
-                </span>
-              </div>
-
-              <p className="mb-4 text-xs leading-relaxed text-slate-300">
-                Filtered from our 100+ catalog for &ldquo;<strong className="text-white">{request}</strong>&rdquo;. Tap your choice to add to cart and continue to checkout:
-              </p>
-
-              <div className="grid gap-3 sm:grid-cols-3">
-                {top3Matches.map((item, idx) => (
-                  <div
-                    key={item.id}
-                    className="flex flex-col justify-between rounded-2xl border border-white/15 bg-white/10 p-4 transition hover:bg-white/20 hover:border-white/40"
+                  {/* Interactive Voice Assistant Button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const topItem = recommendation?.product || paginatedProducts[0];
+                      if (topItem) {
+                        const priceStr = `₹${(topItem.pricePaise / 100).toLocaleString("en-IN")}`;
+                        speakResultsSummary(topItem.name, priceStr);
+                      }
+                    }}
+                    className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition shadow-sm ${
+                      isSpeaking
+                        ? "bg-red-600 text-white animate-pulse ring-2 ring-red-300"
+                        : "border border-black/20 bg-white text-slate-900 hover:bg-black hover:text-white"
+                    }`}
+                    title="Listen to AI Voice Assistant"
                   >
-                    <div>
-                      <span className="rounded-md bg-sky-500/30 px-2 py-0.5 text-[10px] font-bold text-sky-200">
-                        Option #{idx + 1}
-                      </span>
-                      <h4 className="mt-2 text-sm font-bold text-white line-clamp-1">{item.name}</h4>
-                      <p className="mt-1 text-xs font-semibold text-emerald-400">
-                        ₹{(item.pricePaise / 100).toLocaleString("en-IN")}
-                      </p>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => handleChoose(item)}
-                      className="oval-pill-btn mt-3 w-full border-white bg-white py-2 text-xs font-bold text-slate-950 hover:bg-slate-200 transition shadow-sm"
-                    >
-                      Select Option #{idx + 1} &rarr;
-                    </button>
-                  </div>
-                ))}
+                    <span className="text-sm">🔊</span> {isSpeaking ? "AI Speaking..." : "Listen AI Voice"}
+                  </button>
+                </div>
               </div>
             </div>
           )}
