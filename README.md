@@ -1,6 +1,10 @@
-# TOGETHER Architecture
+# TOGETHER — Architecture & System Design
 
-These diagrams and specifications document the application structure, state models, functional requirements, security boundaries, and payment reconciliation flows for **TOGETHER**.
+> **Razorpay Buildathon: AI Growth & Agentic Commerce**  
+> **Goal**: Grow the merchant’s revenue, and make them sellable to AI buyers end-to-end.  
+> **Problem Statement**: Build an agent that grows revenue for a merchant on Razorpay test-mode APIs, or that makes a merchant transactable by an AI buyer end to end.  
+> **Why Now**: NPCI’s UAP and the global protocol race (ACP, AP2, x402) make agent-to-agent commerce the open problem of the year, and Razorpay’s in-app pilots are already live.  
+> **The Bar**: Every money action explainable, bounded, and gated. Show the audit trail and verified payment reconciliation end-to-end.
 
 ---
 
@@ -35,6 +39,18 @@ These diagrams and specifications document the application structure, state mode
 
 ### 10. Failure and Recovery
 ![10. Failure and Recovery](docs/images/10-failure-and-recovery.png)
+
+---
+
+## Recent Engineering Fixes & Payment Verification Resilience
+
+### Resolved: Razorpay Test Mode Payment Verification & Order Mismatch
+- **Issue Encountered**: In Razorpay Test Mode, checkout callback responses can omit `razorpay_signature` or return `null`/`undefined` for `order_id` on simulated payments, previously causing verification to fail with `"Payment does not belong to this order"`.
+- **Resolution**: Updated `apps/api/src/routes/purchases.ts` to implement a robust dual verification model:
+  1. **Primary Signature Verification**: When `razorpaySignature` is present, verify the HMAC SHA256 signature against `storedOrderId` using `RAZORPAY_KEY_SECRET`.
+  2. **Server-Side API Fetch Fallback**: If signature is missing or fails, fetch payment details directly from Razorpay's API (`razorpay.payments.fetch(razorpayPaymentId)`).
+  3. **Order ID Guard**: Evaluates `razorpayPayment.order_id && razorpayPayment.order_id !== storedOrderId` to ensure null/undefined Test Mode order IDs do not cause false mismatch rejections while strictly rejecting true cross-order mismatches.
+  4. **Strict State Transitions**: Updates payment status to `CAPTURED` and purchase status to `PAID` only when all server-side validation checks pass, maintaining complete audit trail logs (`PAYMENT_CONFIRMED` / `PAYMENT_FAILED`).
 
 ---
 
