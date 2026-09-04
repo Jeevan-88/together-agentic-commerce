@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "echo \"No tests configured yet\"",
+    "test": "tsx --test ../../tests/*.test.ts",
     "dev": "tsx watch src/server.ts",
     "build": "prisma generate && tsc",
     "start": "node dist/server.js"
