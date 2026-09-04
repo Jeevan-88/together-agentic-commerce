@@ -76,3 +76,65 @@ html.accessible-mode :focus-visible {
   outline: 3px solid #000000 !important;
   outline-offset: 3px !important;
 }
+
+/* Google Gemini Rainbow Glow Animation */
+@keyframes gemini-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.gemini-rainbow-card {
+  position: relative;
+  border-radius: 1.5rem;
+  padding: 2.5px;
+  background: linear-gradient(
+    135deg,
+    #4285f4 0%,
+    #9b72cb 25%,
+    #d96570 50%,
+    #fbbc05 75%,
+    #34a853 90%,
+    #4285f4 100%
+  );
+  background-size: 300% 300%;
+  animation: gemini-flow 7s ease infinite;
+  box-shadow: 0 10px 30px -8px rgba(66, 133, 244, 0.22), 0 4px 15px -4px rgba(217, 101, 112, 0.18);
+  transition: box-shadow 0.3s ease;
+}
+
+.gemini-rainbow-card:focus-within {
+  box-shadow: 0 14px 45px -6px rgba(66, 133, 244, 0.4), 0 6px 25px -4px rgba(217, 101, 112, 0.35);
+}
+
+.gemini-rainbow-inner {
+  background-color: #ffffff;
+  border-radius: calc(1.5rem - 2.5px);
+  position: relative;
+  z-index: 1;
+}
+
+/* Oval Pill Button Style from user reference */
+.oval-pill-btn {
+  border-radius: 9999px;
+  border: 1.5px solid currentColor;
+  padding: 0.45rem 1.4rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.oval-pill-btn:hover {
+  transform: translateY(-1px);
+}
