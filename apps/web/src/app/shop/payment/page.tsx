@@ -344,80 +344,60 @@ function PaymentContent() {
               )}
 
               <p className="mt-3 text-sm leading-6 text-black/60">
-                Your purchase has been approved and validated. You can give a voice command to our AI Assistant below, or click to open Razorpay Test Mode checkout.
+                Your purchase has been approved and validated. Click below to launch
+                the Razorpay Test Mode checkout modal, or speak &ldquo;Yes&rdquo; into your microphone.
               </p>
 
-              {/* Voice AI Payment Assistant Banner */}
-              <div className="my-6 rounded-2xl border border-black/15 bg-gradient-to-br from-slate-900 via-black to-slate-900 p-5 text-left text-white shadow-xl">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-lg">
-                      🤖
-                    </span>
-                    <div>
-                      <span className="text-[10px] font-extrabold uppercase tracking-widest text-sky-400">
-                        TOGETHER Voice Assistant
-                      </span>
-                      <h3 className="text-sm font-bold text-white">
-                        Automated Payment Authorization
-                      </h3>
-                    </div>
+              {/* Discreet Voice AI Control Bar (Audio Sound active, no clutter card) */}
+              <div className="my-4 flex items-center justify-between rounded-2xl border border-black/10 bg-white p-3.5 shadow-xs">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-black/5 text-sm font-bold">
+                    🤖
+                  </span>
+                  <div className="text-left">
+                    <p className="text-xs font-bold text-slate-950">
+                      Voice AI Payment Assistant
+                    </p>
+                    <p className="text-[11px] text-black/50">
+                      {isListeningAi
+                        ? "Listening... Speak 'Yes' to pay or 'No' to cancel"
+                        : aiTranscript
+                          ? `Heard: "${aiTranscript}"`
+                          : "Hands-free voice payment active"}
+                    </p>
                   </div>
+                </div>
 
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={startAiVoiceListening}
-                    className={`flex h-9 w-9 items-center justify-center rounded-full transition ${
+                    className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition shadow-xs ${
                       isListeningAi
-                        ? "bg-red-600 text-white animate-pulse ring-4 ring-red-400"
-                        : "bg-white/15 text-white hover:bg-white/30"
+                        ? "bg-red-600 text-white animate-pulse"
+                        : "border border-black/15 bg-slate-50 text-slate-900 hover:bg-black hover:text-white"
                     }`}
-                    title="Click to speak voice command"
+                    title="Toggle microphone"
                   >
-                    🎤
-                  </button>
-                </div>
-
-                <p className="mt-3 text-xs leading-relaxed text-slate-200">
-                  &ldquo;Hello! Would you like me to process the payment of{" "}
-                  <strong className="text-white font-bold">{formattedAmount || "your item"}</strong> for{" "}
-                  <strong className="text-white font-bold">{purchaseDetails?.productName || "your order"}</strong>{" "}
-                  automatically? Say <span className="rounded bg-emerald-500/30 px-1.5 py-0.5 font-bold text-emerald-300">&quot;Yes&quot;</span> to approve or <span className="rounded bg-red-500/30 px-1.5 py-0.5 font-bold text-red-300">&quot;No&quot;</span> to cancel.&rdquo;
-                </p>
-
-                {aiTranscript && (
-                  <p className="mt-2 text-[11px] font-mono text-sky-300">
-                    Listening: &ldquo;{aiTranscript}&rdquo;
-                  </p>
-                )}
-
-                <div className="mt-4 flex flex-wrap items-center gap-2 pt-2 border-t border-white/10">
-                  <button
-                    type="button"
-                    onClick={handleAiConfirm}
-                    disabled={isLoading || aiState === "CONFIRMED"}
-                    className="oval-pill-btn border-emerald-500 bg-emerald-600 px-4 py-1.5 text-[11px] font-bold text-white shadow-sm hover:bg-emerald-500 transition disabled:opacity-50"
-                  >
-                    ✓ Yes, Pay {formattedAmount || ""}
+                    <span>🎤</span> {isListeningAi ? "Listening..." : "Mic On"}
                   </button>
                   <button
                     type="button"
-                    onClick={handleAiCancel}
-                    disabled={isLoading || aiState === "CANCELLED"}
-                    className="oval-pill-btn border-red-500/50 bg-white/10 px-4 py-1.5 text-[11px] font-bold text-slate-200 hover:bg-red-600 hover:text-white transition disabled:opacity-50"
+                    onClick={() => {
+                      if (purchaseDetails) {
+                        const amountStr = purchaseDetails.totalPaise
+                          ? `₹${(purchaseDetails.totalPaise / 100).toLocaleString("en-IN")}`
+                          : "the requested amount";
+                        speakText(
+                          `Hello! Would you like me to process the payment of ${amountStr} for ${purchaseDetails.productName || "your item"} automatically? Say 'Yes' to approve or 'No' to cancel.`,
+                        );
+                      }
+                    }}
+                    className="flex items-center gap-1 rounded-full border border-black/15 bg-white px-2.5 py-1 text-xs font-bold text-slate-900 transition hover:bg-black hover:text-white shadow-xs"
+                    title="Replay Audio Voice Prompt"
                   >
-                    ✕ No, Cancel
+                    🔊 Speaker
                   </button>
-                  {aiState === "CONFIRMED" && (
-                    <span className="text-[11px] font-bold text-emerald-400 ml-auto">
-                      ✓ Voice Authorization Approved
-                    </span>
-                  )}
-                  {aiState === "CANCELLED" && (
-                    <span className="text-[11px] font-bold text-red-400 ml-auto">
-                      ✕ Cancelled by User
-                    </span>
-                  )}
                 </div>
               </div>
 
