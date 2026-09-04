@@ -386,6 +386,40 @@ function ResultsContent() {
                           )}
                         </div>
 
+                        {/* Budget Analysis: Exact Price vs Stated Limit (Exceeds: Yes / No) */}
+                        {(() => {
+                          const budgetMatch = request.match(
+                            /(?:under|below|less than|within|upto|up to|max|maximum|₹|rs|inr)[^\d]{0,10}(\d+(?:\.\d+)?)\s*(k|thousand)?/i,
+                          );
+                          if (!budgetMatch) return null;
+                          let val = Number(budgetMatch[1]);
+                          if (
+                            budgetMatch[2]?.toLowerCase().startsWith("k") ||
+                            budgetMatch[2]?.toLowerCase().startsWith("thousand")
+                          ) {
+                            val *= 1000;
+                          }
+                          const budgetPaise = val * 100;
+                          const exceeds = product.pricePaise > budgetPaise;
+                          const diff = Math.abs(product.pricePaise - budgetPaise) / 100;
+                          const diffFormatted = `₹${diff.toLocaleString("en-IN")}`;
+                          const limitFormatted = `₹${val.toLocaleString("en-IN")}`;
+
+                          return (
+                            <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                              {exceeds ? (
+                                <span className="rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold text-amber-900 shadow-xs">
+                                  ⚠️ Exceeds Budget (by {diffFormatted} over {limitFormatted} limit)
+                                </span>
+                              ) : (
+                                <span className="rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-900 shadow-xs">
+                                  ✓ Within Budget ({diffFormatted} under {limitFormatted} limit)
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })()}
+
                         {/* Match Reasons if available */}
                         {isTopMatch && recommendation.reasons?.length > 0 && (
                           <div className="mt-3.5 rounded-xl bg-blue-50/70 p-2.5 text-[11px] text-blue-900">

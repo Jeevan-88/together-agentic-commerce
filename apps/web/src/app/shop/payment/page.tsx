@@ -45,6 +45,20 @@ function PaymentContent() {
     mode?: string;
   } | null>(null);
 
+  const [aiState, setAiState] = useState<"IDLE" | "PROMPTING" | "CONFIRMED" | "CANCELLED">("IDLE");
+  const [aiTranscript, setAiTranscript] = useState("");
+  const [isListeningAi, setIsListeningAi] = useState(false);
+
+  function speakText(text: string) {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.95;
+      utterance.pitch = 1.0;
+      window.speechSynthesis.speak(utterance);
+    }
+  }
+
   useEffect(() => {
     if (!purchaseId) return;
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
@@ -63,6 +77,98 @@ function PaymentContent() {
       })
       .catch(() => {});
   }, [purchaseId]);
+
+  useEffect(() => {
+    if (!purchaseDetails || aiState !== "IDLE") return;
+    setAiState("PROMPTING");
+    const amountStr = purchaseDetails.totalPaise
+      ? `₹${(purchaseDetails.totalPaise / 100).toLocaleString("en-IN")}`
+      : "the requested amount";
+    const promptText = `Hello! Would you like me to process the payment of ${amountStr} for ${purchaseDetails.productName || "your item"} automatically? Please say 'Yes' to pay, or 'No' to cancel.`;
+    speakText(promptText);
+  }, [purchaseDetails, aiState]);
+
+  function startAiVoiceListening() {
+    if (typeof window === "undefined") return;
+    const SpeechRecognition =
+      (window as unknown as Record<string, unknown>).SpeechRecognition ||
+      (window as unknown as Record<string, unknown>).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      setError("Voice recognition is not supported in this browser. Please use the buttons below.");
+      return;
+    }
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const recognition = new (SpeechRecognition as any)();
+      recognition.lang = "en-US";
+      recognition.interimResults = true;
+      recognition.continuous = false;
+
+      setIsListeningAi(true);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      recognition.onresult = (event: any) => {
+        let transcript = "";
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        const text = transcript.trim().toLowerCase();
+        setAiTranscript(text);
+
+        if (
+          text.includes("yes") ||
+          text.includes("proceed") ||
+          text.includes("pay") ||
+          text.includes("confirm") ||
+          text.includes("sure") ||
+          text.includes("do payment") ||
+          text.includes("okay") ||
+          text.includes("ok")
+        ) {
+          recognition.stop();
+          setIsListeningAi(false);
+          handleAiConfirm();
+        } else if (
+          text.includes("no") ||
+          text.includes("cancel") ||
+          text.includes("stop") ||
+          text.includes("don't") ||
+          text.includes("deny")
+        ) {
+          recognition.stop();
+          setIsListeningAi(false);
+          handleAiCancel();
+        }
+      };
+
+      recognition.onerror = () => {
+        setIsListeningAi(false);
+      };
+
+      recognition.onend = () => {
+        setIsListeningAi(false);
+      };
+
+      recognition.start();
+    } catch (e) {
+      console.error("AI speech error:", e);
+      setIsListeningAi(false);
+    }
+  }
+
+  function handleAiConfirm() {
+    setAiState("CONFIRMED");
+    speakText("Thank you! Initiating Razorpay payment now.");
+    startPayment();
+  }
+
+  function handleAiCancel() {
+    setAiState("CANCELLED");
+    speakText("Understood. Payment process cancelled.");
+    setMessage("Payment cancelled via AI Voice command.");
+  }
 
   async function startPayment() {
     if (!purchaseId) {
@@ -238,9 +344,82 @@ function PaymentContent() {
               )}
 
               <p className="mt-3 text-sm leading-6 text-black/60">
-                Your purchase has been approved and validated. Click below to launch
-                the Razorpay Test Mode checkout modal.
+                Your purchase has been approved and validated. You can give a voice command to our AI Assistant below, or click to open Razorpay Test Mode checkout.
               </p>
+
+              {/* Voice AI Payment Assistant Banner */}
+              <div className="my-6 rounded-2xl border border-black/15 bg-gradient-to-br from-slate-900 via-black to-slate-900 p-5 text-left text-white shadow-xl">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-lg">
+                      🤖
+                    </span>
+                    <div>
+                      <span className="text-[10px] font-extrabold uppercase tracking-widest text-sky-400">
+                        TOGETHER Voice Assistant
+                      </span>
+                      <h3 className="text-sm font-bold text-white">
+                        Automated Payment Authorization
+                      </h3>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={startAiVoiceListening}
+                    className={`flex h-9 w-9 items-center justify-center rounded-full transition ${
+                      isListeningAi
+                        ? "bg-red-600 text-white animate-pulse ring-4 ring-red-400"
+                        : "bg-white/15 text-white hover:bg-white/30"
+                    }`}
+                    title="Click to speak voice command"
+                  >
+                    🎤
+                  </button>
+                </div>
+
+                <p className="mt-3 text-xs leading-relaxed text-slate-200">
+                  &ldquo;Hello! Would you like me to process the payment of{" "}
+                  <strong className="text-white font-bold">{formattedAmount || "your item"}</strong> for{" "}
+                  <strong className="text-white font-bold">{purchaseDetails?.productName || "your order"}</strong>{" "}
+                  automatically? Say <span className="rounded bg-emerald-500/30 px-1.5 py-0.5 font-bold text-emerald-300">&quot;Yes&quot;</span> to approve or <span className="rounded bg-red-500/30 px-1.5 py-0.5 font-bold text-red-300">&quot;No&quot;</span> to cancel.&rdquo;
+                </p>
+
+                {aiTranscript && (
+                  <p className="mt-2 text-[11px] font-mono text-sky-300">
+                    Listening: &ldquo;{aiTranscript}&rdquo;
+                  </p>
+                )}
+
+                <div className="mt-4 flex flex-wrap items-center gap-2 pt-2 border-t border-white/10">
+                  <button
+                    type="button"
+                    onClick={handleAiConfirm}
+                    disabled={isLoading || aiState === "CONFIRMED"}
+                    className="oval-pill-btn border-emerald-500 bg-emerald-600 px-4 py-1.5 text-[11px] font-bold text-white shadow-sm hover:bg-emerald-500 transition disabled:opacity-50"
+                  >
+                    ✓ Yes, Pay {formattedAmount || ""}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleAiCancel}
+                    disabled={isLoading || aiState === "CANCELLED"}
+                    className="oval-pill-btn border-red-500/50 bg-white/10 px-4 py-1.5 text-[11px] font-bold text-slate-200 hover:bg-red-600 hover:text-white transition disabled:opacity-50"
+                  >
+                    ✕ No, Cancel
+                  </button>
+                  {aiState === "CONFIRMED" && (
+                    <span className="text-[11px] font-bold text-emerald-400 ml-auto">
+                      ✓ Voice Authorization Approved
+                    </span>
+                  )}
+                  {aiState === "CANCELLED" && (
+                    <span className="text-[11px] font-bold text-red-400 ml-auto">
+                      ✕ Cancelled by User
+                    </span>
+                  )}
+                </div>
+              </div>
 
               <div className="surface-inset my-6 rounded-2xl p-4 text-left">
                 <div className="flex items-center justify-between text-xs text-black/50">

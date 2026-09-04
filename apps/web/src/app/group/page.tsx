@@ -76,6 +76,13 @@ export default function GroupPage() {
 
   useEffect(() => {
     loadGroups();
+    const stored = localStorage.getItem("together_user");
+    if (stored) {
+      try {
+        const u = JSON.parse(stored);
+        if (u.name) setUserName(u.name);
+      } catch (e) {}
+    }
   }, []);
 
   async function createGroup(event: FormEvent<HTMLFormElement>) {
@@ -92,6 +99,15 @@ export default function GroupPage() {
       setMessage("");
       setIsError(false);
 
+      const stored = localStorage.getItem("together_user");
+      let email = "demo@together.local";
+      if (stored) {
+        try {
+          const u = JSON.parse(stored);
+          if (u.email) email = u.email;
+        } catch (e) {}
+      }
+
       const response = await fetch(`${API_URL}/api/groups`, {
         method: "POST",
         headers: {
@@ -100,7 +116,7 @@ export default function GroupPage() {
         body: JSON.stringify({
           name: groupName.trim(),
           userName: userName.trim(),
-          email: "demo@together.local",
+          email,
         }),
       });
 

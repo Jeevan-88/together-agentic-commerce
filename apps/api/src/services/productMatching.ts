@@ -17,6 +17,14 @@ export type ProductMatch = {
   score: number;
   reasons: string[];
   matchedCriteria: string[];
+  budgetAnalysis: {
+    statedBudgetPaise: number | null;
+    itemPricePaise: number;
+    exceedsBudget: boolean;
+    differencePaise: number;
+    budgetText: string;
+  };
+  matchedKeywords: string[];
 };
 
 type ParsedRequest = {
@@ -321,6 +329,28 @@ function scoreProduct(
     );
   }
 
+  const matchedKeywordsList = request.keywords.filter((kw) =>
+    searchText.includes(kw),
+  );
+
+  const statedBudgetPaise = request.budgetPaise ?? null;
+  const itemPricePaise = product.pricePaise;
+  let exceedsBudget = false;
+  let differencePaise = 0;
+  let budgetText = "No budget specified";
+
+  if (statedBudgetPaise !== null) {
+    exceedsBudget = itemPricePaise > statedBudgetPaise;
+    differencePaise = itemPricePaise - statedBudgetPaise;
+    if (exceedsBudget) {
+      const diffFormatted = `₹${(Math.abs(differencePaise) / 100).toLocaleString("en-IN")}`;
+      budgetText = `Exceeds Budget (by ${diffFormatted})`;
+    } else {
+      const underFormatted = `₹${(Math.abs(differencePaise) / 100).toLocaleString("en-IN")}`;
+      budgetText = `Within Budget (${underFormatted} under limit)`;
+    }
+  }
+
   return {
     product: {
       id: product.id,
@@ -334,6 +364,14 @@ function scoreProduct(
     score: Math.max(0, Math.min(100, score)),
     reasons: [...new Set(reasons)],
     matchedCriteria: [...new Set(matchedCriteria)],
+    budgetAnalysis: {
+      statedBudgetPaise,
+      itemPricePaise,
+      exceedsBudget,
+      differencePaise,
+      budgetText,
+    },
+    matchedKeywords: matchedKeywordsList,
   };
 }
 
