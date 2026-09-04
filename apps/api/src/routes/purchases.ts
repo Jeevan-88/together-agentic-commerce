@@ -751,121 +751,126 @@ router.post("/:id/verify-payment", async (req, res) => {
         razorpaySignature,
         keySecret,
       );
+    }
 
-      if (!verifiedBySignature) {
-        await prisma.auditLog.create({
-          data: {
-            purchaseId: purchase.id,
-            action: "PAYMENT_FAILED",
-            actorId: purchase.userId,
-            details: {
-              reason: "INVALID_SIGNATURE",
-              razorpayOrderId: targetOrderId,
-              razorpayPaymentId,
+    if (!verifiedBySignature) {
+      try {
+        const razorpayPayment = await razorpay.payments.fetch(
+          razorpayPaymentId,
+        );
+
+        if (!razorpayPayment || razorpayPayment.id !== razorpayPaymentId) {
+          return res.status(400).json({
+            success: false,
+            message: "Payment ID could not be verified",
+          });
+        }
+
+        if (razorpayPayment.order_id && razorpayPayment.order_id !== storedOrderId) {
+          await prisma.auditLog.create({
+            data: {
+              purchaseId: purchase.id,
+              action: "PAYMENT_FAILED",
+              actorId: purchase.userId,
+              details: {
+                reason: "PAYMENT_ORDER_MISMATCH",
+                razorpayPaymentId,
+                storedOrderId,
+                razorpayOrderId: razorpayPayment.order_id ?? null,
+              },
             },
-          },
-        });
+          });
 
-        return res.status(400).json({
-          success: false,
-          message: "Payment signature verification failed",
-        });
-      }
-    } else {
-      const razorpayPayment = await razorpay.payments.fetch(
-        razorpayPaymentId,
-      );
+          return res.status(400).json({
+            success: false,
+            message: "Payment does not belong to this order",
+          });
+        }
 
-      if (!razorpayPayment || razorpayPayment.id !== razorpayPaymentId) {
-        return res.status(400).json({
-          success: false,
-          message: "Payment ID could not be verified",
-        });
-      }
-
-      if (razorpayPayment.order_id !== storedOrderId) {
-        await prisma.auditLog.create({
-          data: {
-            purchaseId: purchase.id,
-            action: "PAYMENT_FAILED",
-            actorId: purchase.userId,
-            details: {
-              reason: "PAYMENT_ORDER_MISMATCH",
-              razorpayPaymentId,
-              storedOrderId,
-              razorpayOrderId: razorpayPayment.order_id ?? null,
+        if (razorpayPayment.amount !== purchase.totalPaise) {
+          await prisma.auditLog.create({
+            data: {
+              purchaseId: purchase.id,
+              action: "PAYMENT_FAILED",
+              actorId: purchase.userId,
+              details: {
+                reason: "PAYMENT_AMOUNT_MISMATCH",
+                razorpayPaymentId,
+                expectedAmount: purchase.totalPaise,
+                receivedAmount: razorpayPayment.amount,
+              },
             },
-          },
-        });
+          });
 
-        return res.status(400).json({
-          success: false,
-          message: "Payment does not belong to this order",
-        });
-      }
+          return res.status(400).json({
+            success: false,
+            message: "Payment amount does not match purchase total",
+          });
+        }
 
-      if (razorpayPayment.amount !== purchase.totalPaise) {
-        await prisma.auditLog.create({
-          data: {
-            purchaseId: purchase.id,
-            action: "PAYMENT_FAILED",
-            actorId: purchase.userId,
-            details: {
-              reason: "PAYMENT_AMOUNT_MISMATCH",
-              razorpayPaymentId,
-              expectedAmount: purchase.totalPaise,
-              receivedAmount: razorpayPayment.amount,
+        if (razorpayPayment.currency !== purchase.currency) {
+          await prisma.auditLog.create({
+            data: {
+              purchaseId: purchase.id,
+              action: "PAYMENT_FAILED",
+              actorId: purchase.userId,
+              details: {
+                reason: "PAYMENT_CURRENCY_MISMATCH",
+                razorpayPaymentId,
+                expectedCurrency: purchase.currency,
+                receivedCurrency: razorpayPayment.currency,
+              },
             },
-          },
-        });
+          });
 
-        return res.status(400).json({
-          success: false,
-          message: "Payment amount does not match purchase total",
-        });
-      }
+          return res.status(400).json({
+            success: false,
+            message: "Payment currency does not match purchase currency",
+          });
+        }
 
-      if (razorpayPayment.currency !== purchase.currency) {
-        await prisma.auditLog.create({
-          data: {
-            purchaseId: purchase.id,
-            action: "PAYMENT_FAILED",
-            actorId: purchase.userId,
-            details: {
-              reason: "PAYMENT_CURRENCY_MISMATCH",
-              razorpayPaymentId,
-              expectedCurrency: purchase.currency,
-              receivedCurrency: razorpayPayment.currency,
+        razorpayStatus = razorpayPayment.status;
+
+        if (razorpayStatus !== "authorized" && razorpayStatus !== "captured") {
+          await prisma.auditLog.create({
+            data: {
+              purchaseId: purchase.id,
+              action: "PAYMENT_FAILED",
+              actorId: purchase.userId,
+              details: {
+                reason: "PAYMENT_NOT_SUCCESSFUL",
+                razorpayPaymentId,
+                razorpayStatus,
+              },
             },
-          },
-        });
+          });
 
-        return res.status(400).json({
-          success: false,
-          message: "Payment currency does not match purchase currency",
-        });
-      }
-
-      razorpayStatus = razorpayPayment.status;
-
-      if (razorpayStatus !== "authorized" && razorpayStatus !== "captured") {
-        await prisma.auditLog.create({
-          data: {
-            purchaseId: purchase.id,
-            action: "PAYMENT_FAILED",
-            actorId: purchase.userId,
-            details: {
-              reason: "PAYMENT_NOT_SUCCESSFUL",
-              razorpayPaymentId,
-              razorpayStatus,
+          return res.status(400).json({
+            success: false,
+            message: `Payment is not successful. Current status: ${razorpayStatus}`,
+          });
+        }
+      } catch (fetchErr) {
+        if (razorpaySignature) {
+          await prisma.auditLog.create({
+            data: {
+              purchaseId: purchase.id,
+              action: "PAYMENT_FAILED",
+              actorId: purchase.userId,
+              details: {
+                reason: "INVALID_SIGNATURE_AND_FETCH_FAILED",
+                razorpayOrderId: razorpayOrderId || storedOrderId,
+                razorpayPaymentId,
+              },
             },
-          },
-        });
+          });
 
-        return res.status(400).json({
-          success: false,
-          message: `Payment is not successful. Current status: ${razorpayStatus}`,
-        });
+          return res.status(400).json({
+            success: false,
+            message: "Payment signature verification failed",
+          });
+        }
+        throw fetchErr;
       }
     }
 
