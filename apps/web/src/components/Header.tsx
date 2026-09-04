@@ -24,17 +24,8 @@ export default function Header({ currentStep }: HeaderProps) {
   const [authPassword, setAuthPassword] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
-  const [a11yMode, setA11yMode] = useState(false);
 
   useEffect(() => {
-    const savedA11y = localStorage.getItem("together_a11y") === "true";
-    setA11yMode(savedA11y);
-    if (savedA11y) {
-      document.documentElement.classList.add("accessible-mode");
-    } else {
-      document.documentElement.classList.remove("accessible-mode");
-    }
-
     function handleOpenAuth() {
       setAuthError("");
       setShowAuthModal(true);
@@ -85,17 +76,6 @@ export default function Header({ currentStep }: HeaderProps) {
       window.removeEventListener("open_together_auth", handleOpenAuth);
     };
   }, []);
-
-  function toggleA11y() {
-    const next = !a11yMode;
-    setA11yMode(next);
-    localStorage.setItem("together_a11y", String(next));
-    if (next) {
-      document.documentElement.classList.add("accessible-mode");
-    } else {
-      document.documentElement.classList.remove("accessible-mode");
-    }
-  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -221,22 +201,8 @@ export default function Header({ currentStep }: HeaderProps) {
           </Link>
         </div>
 
-        {/* Right: User Auth, Step Indicator & Accessibility */}
+        {/* Right: User Auth & Step Indicator */}
         <div className="flex items-center gap-2 sm:gap-3">
-          <button
-            type="button"
-            onClick={toggleA11y}
-            aria-label={`Toggle Accessibility Mode (currently ${a11yMode ? "enabled" : "disabled"})`}
-            title={a11yMode ? "Disable Accessibility Mode" : "Enable Accessibility Mode"}
-            className={`oval-pill-btn text-[11px] font-bold transition ${
-              a11yMode
-                ? "border-black bg-black text-white shadow-xs"
-                : "border-black/20 bg-white text-slate-900 hover:border-black hover:bg-black hover:text-white"
-            }`}
-          >
-            ♿ A11y {a11yMode ? "ON" : "OFF"}
-          </button>
-
           {user ? (
             <button
               type="button"

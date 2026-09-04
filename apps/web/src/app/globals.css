@@ -38,43 +38,7 @@ body {
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
-/* Accessibility Mode (High Contrast & Enhanced Focus) */
-html.accessible-mode {
-  --background: #ffffff;
-  --foreground: #000000;
-  --border-subtle: #000000;
-}
 
-html.accessible-mode body {
-  font-size: 17px;
-  line-height: 1.6;
-}
-
-html.accessible-mode .surface-card {
-  border: 2px solid #000000 !important;
-  box-shadow: none !important;
-}
-
-html.accessible-mode .surface-inset {
-  border: 2px solid #000000 !important;
-  background-color: #f0f0f0 !important;
-}
-
-html.accessible-mode button,
-html.accessible-mode a,
-html.accessible-mode input,
-html.accessible-mode textarea {
-  border-width: 2px !important;
-}
-
-:focus-visible {
-  outline: none;
-}
-
-html.accessible-mode :focus-visible {
-  outline: 3px solid #000000 !important;
-  outline-offset: 3px !important;
-}
 
 /* Google Gemini Rainbow & Monochrome Glow Animations */
 @keyframes gemini-flow {

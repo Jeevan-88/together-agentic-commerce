@@ -61,7 +61,6 @@
 - **Side-by-Side Product Comparison**: Compare 2 to 3 products simultaneously on pricing, original price, discounts, ratings, reviews, capacity, weight, and key features, with automatic badges for "Lowest Price" and "Top Rated".
 - **Real Authentication & Sessions**: Password hashing using Node.js `crypto.scrypt` with random salt, database-backed `Session` model, session persistence across page refreshes via `GET /api/auth/me`, and account sign-in / sign-up modal.
 - **Group Shopping Collaboration**: Create shopping groups, manage members with role permissions (`OWNER` vs `MEMBER`), and execute group purchases with group consensus.
-- **Accessibility Mode (A11y)**: High-contrast display mode toggle in header adhering to WCAG focus rings, bold borders, and persistent preference.
 - **Hands-Free Voice Input**: Web Speech API integration feeding dictated prompts directly into intent parsing.
 - **Server-Gated Payment Lifecycle**: Strict state progression `DRAFT` &rarr; `PENDING_PAYMENT` (via explicit approval) &rarr; `PAID` / `FAILED`. Razorpay order amounts are computed strictly from database prices in paise, never trusted from the client.
 - **Dual Payment Verification & Resilient Fallback**: Signature HMAC SHA256 verification with server-to-server Razorpay API fetch fallback handling test-mode order ID edge cases.
