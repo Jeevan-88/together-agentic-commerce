@@ -203,14 +203,22 @@ function PaymentContent() {
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+      const token =
+        typeof window !== "undefined"
+          ? localStorage.getItem("together_token")
+          : null;
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
 
       const orderResponse = await fetch(
         `${apiUrl}/api/purchases/${purchaseId}/payment-order`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers,
         },
       );
 
@@ -243,9 +251,7 @@ function PaymentContent() {
               `${apiUrl}/api/purchases/${purchaseId}/verify-payment`,
               {
                 method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
+                headers,
                 body: JSON.stringify({
                   razorpayPaymentId: response.razorpay_payment_id,
                   razorpayOrderId: response.razorpay_order_id || orderData.orderId,

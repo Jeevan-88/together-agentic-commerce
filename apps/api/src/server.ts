@@ -9,6 +9,8 @@ import purchasesRouter from "./routes/purchases.js";
 import webhooksRouter from "./routes/webhooks.js";
 import groupsRouter from "./routes/groups.js";
 import auditRouter from "./routes/audit.js";
+import authRouter from "./routes/auth.js";
+import { authenticateUser } from "./lib/auth.js";
 
 const require = createRequire(import.meta.url);
 const helmet = require("helmet") as () => express.RequestHandler;
@@ -36,6 +38,7 @@ app.use(
 );
 
 app.use(express.json());
+app.use(authenticateUser);
 
 app.get("/health", (_req, res) => {
   res.json({
@@ -62,6 +65,7 @@ app.get("/health/database", async (_req, res) => {
   }
 });
 
+app.use("/api/auth", authRouter);
 app.use("/api/products", productsRouter);
 app.use("/api/purchases", purchasesRouter);
 app.use("/api/groups", groupsRouter);

@@ -42,27 +42,51 @@ export default function GroupPage() {
   const [memberName, setMemberName] = useState("");
   const [memberEmail, setMemberEmail] = useState("");
 
+  function getAuthHeaders(): Record<string, string> {
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("together_token")
+        : null;
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+    return headers;
+  }
+
   async function loadGroups() {
     try {
       setLoading(true);
       setMessage("");
 
-      const response = await fetch(`${API_URL}/api/groups/demo/current`);
-      const data = await response.json();
+      const headers = getAuthHeaders();
+      let response = await fetch(`${API_URL}/api/groups`, { headers });
+      let data = await response.json();
 
-      if (!response.ok) {
-        if (response.status === 404) {
-          setGroups([]);
-          return;
+      if (!response.ok || !data.groups || data.groups.length === 0) {
+        const token =
+          typeof window !== "undefined"
+            ? localStorage.getItem("together_token")
+            : null;
+        if (!token) {
+          const fallbackRes = await fetch(`${API_URL}/api/groups/demo/current`);
+          if (fallbackRes.ok) {
+            data = await fallbackRes.json();
+          }
         }
-        throw new Error(data.message || "Unable to load groups");
       }
 
       const loadedGroups: Group[] = data.groups || [];
       setGroups(loadedGroups);
 
-      if (loadedGroups.length > 0 && !selectedGroupId) {
-        setSelectedGroupId(loadedGroups[0].id);
+      if (loadedGroups.length > 0) {
+        setSelectedGroupId((prev) =>
+          loadedGroups.some((g) => g.id === prev) ? prev : loadedGroups[0].id,
+        );
+      } else {
+        setSelectedGroupId("");
       }
     } catch (error) {
       setIsError(true);
@@ -75,14 +99,24 @@ export default function GroupPage() {
   }
 
   useEffect(() => {
-    loadGroups();
-    const stored = localStorage.getItem("together_user");
-    if (stored) {
-      try {
-        const u = JSON.parse(stored);
-        if (u.name) setUserName(u.name);
-      } catch (e) {}
+    function syncUserAndGroups() {
+      const stored = localStorage.getItem("together_user");
+      if (stored) {
+        try {
+          const u = JSON.parse(stored);
+          if (u.name) setUserName(u.name);
+        } catch (e) {}
+      } else {
+        setUserName("");
+      }
+      loadGroups();
     }
+
+    syncUserAndGroups();
+    window.addEventListener("together_auth_changed", syncUserAndGroups);
+    return () => {
+      window.removeEventListener("together_auth_changed", syncUserAndGroups);
+    };
   }, []);
 
   async function createGroup(event: FormEvent<HTMLFormElement>) {
@@ -110,9 +144,7 @@ export default function GroupPage() {
 
       const response = await fetch(`${API_URL}/api/groups`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           name: groupName.trim(),
           userName: userName.trim(),
@@ -167,9 +199,7 @@ export default function GroupPage() {
         `${API_URL}/api/groups/${selectedGroupId}/members`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: getAuthHeaders(),
           body: JSON.stringify({
             name: memberName.trim(),
             email: memberEmail.trim(),
@@ -224,6 +254,7 @@ export default function GroupPage() {
         `${API_URL}/api/groups/${selectedGroupId}/members/${memberId}`,
         {
           method: "DELETE",
+          headers: getAuthHeaders(),
         },
       );
 
@@ -267,6 +298,7 @@ export default function GroupPage() {
 
       const response = await fetch(`${API_URL}/api/groups/${groupId}`, {
         method: "DELETE",
+        headers: getAuthHeaders(),
       });
 
       const data = await response.json();

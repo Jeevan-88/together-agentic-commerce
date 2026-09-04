@@ -57,13 +57,36 @@ function ProposalContent() {
   const [error, setError] = useState("");
   const [confirmed, setConfirmed] = useState(false);
 
+  function getAuthHeaders(): Record<string, string> {
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("together_token")
+        : null;
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+    return headers;
+  }
+
   useEffect(() => {
     if (productId && !imageUrl) {
       fetch(`${API_URL}/api/products/${productId}`)
         .then((res) => res.json())
         .then((data) => {
-          if (data.success && data.product?.metadata) {
-            setProductData(data.product.metadata);
+          if (data.success && data.product) {
+            setProductData({
+              imageUrl:
+                data.product.imageUrl || data.product.metadata?.imageUrl,
+              originalPricePaise:
+                data.product.originalPricePaise ||
+                data.product.metadata?.originalPricePaise,
+              discountPercent: data.product.metadata?.discountPercent,
+              category: data.product.category || data.product.metadata?.category,
+              rating: data.product.rating || data.product.metadata?.rating,
+            });
           }
         })
         .catch(() => {});
@@ -80,11 +103,21 @@ function ProposalContent() {
         setLoadingGroups(true);
         setError("");
 
-        const response = await fetch(`${API_URL}/api/groups/demo/current`);
-        const data = await response.json();
+        const headers = getAuthHeaders();
+        let response = await fetch(`${API_URL}/api/groups`, { headers });
+        let data = await response.json();
 
-        if (!response.ok) {
-          throw new Error(data.message || "Unable to load groups");
+        if (!response.ok || !data.groups || data.groups.length === 0) {
+          const token =
+            typeof window !== "undefined"
+              ? localStorage.getItem("together_token")
+              : null;
+          if (!token) {
+            const fallbackRes = await fetch(`${API_URL}/api/groups/demo/current`);
+            if (fallbackRes.ok) {
+              data = await fallbackRes.json();
+            }
+          }
         }
 
         const loadedGroups: Group[] = data.groups || [];
@@ -137,11 +170,11 @@ function ProposalContent() {
         purchasePayload.groupId = selectedGroupId;
       }
 
+      const headers = getAuthHeaders();
+
       const purchaseResponse = await fetch(`${API_URL}/api/purchases`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify(purchasePayload),
       });
 
@@ -162,9 +195,7 @@ function ProposalContent() {
         `${API_URL}/api/purchases/${purchaseId}/approve`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers,
         },
       );
 

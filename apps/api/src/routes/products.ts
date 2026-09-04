@@ -13,15 +13,33 @@ const recommendationSchema = z.object({
     .max(500, "Request is too long"),
 });
 
-router.get("/", async (_req, res) => {
+router.get("/", async (req, res) => {
   try {
-    const products = await prisma.product.findMany({
-      where: {
+    const { category, search } = req.query;
+
+    const where: Record<string, unknown> = {
+      active: true,
+      merchant: {
         active: true,
-        merchant: {
-          active: true,
-        },
       },
+    };
+
+    if (category && typeof category === "string" && category.toLowerCase() !== "all") {
+      where.category = {
+        equals: category,
+        mode: "insensitive",
+      };
+    }
+
+    if (search && typeof search === "string" && search.trim().length > 0) {
+      where.OR = [
+        { name: { contains: search.trim(), mode: "insensitive" } },
+        { description: { contains: search.trim(), mode: "insensitive" } },
+      ];
+    }
+
+    const products = await prisma.product.findMany({
+      where,
       include: {
         merchant: true,
       },

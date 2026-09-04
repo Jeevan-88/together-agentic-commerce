@@ -57,15 +57,30 @@ enum AuditAction {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  groups          GroupMember[]
-  purchases       Purchase[]
-  createdGroups   Group[] @relation("GroupCreator")
+  sessions      Session[]
+  groups        GroupMember[]
+  purchases     Purchase[]
+  createdGroups Group[]       @relation("GroupCreator")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
 }
 
 model Group {
@@ -107,21 +122,28 @@ model Merchant {
 }
 
 model Product {
-  id          String   @id @default(uuid())
-  merchantId  String
-  name        String
-  description String?
-  pricePaise  Int
-  currency    String   @default("INR")
-  active      Boolean  @default(true)
-  metadata    Json?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                 String   @id @default(uuid())
+  merchantId         String
+  name               String
+  description        String?
+  pricePaise         Int
+  originalPricePaise Int?
+  imageUrl           String?
+  productUrl         String?
+  category           String?
+  rating             Float?
+  reviewsCount       Int?     @default(0)
+  currency           String   @default("INR")
+  active             Boolean  @default(true)
+  metadata           Json?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Restrict)
   items    PurchaseItem[]
 
   @@index([merchantId])
+  @@index([category])
 }
 
 model Purchase {

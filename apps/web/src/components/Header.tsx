@@ -3,45 +3,159 @@
 import Link from "next/link";
 import { useEffect, useState, FormEvent } from "react";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+
 interface HeaderProps {
   currentStep?: string;
 }
 
+interface AuthUser {
+  id?: string;
+  name: string;
+  email: string;
+}
+
 export default function Header({ currentStep }: HeaderProps) {
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
   const [authName, setAuthName] = useState("");
   const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState("");
 
   useEffect(() => {
-    const stored = localStorage.getItem("together_user");
-    if (stored) {
+    const token = localStorage.getItem("together_token");
+    const storedUser = localStorage.getItem("together_user");
+
+    if (storedUser) {
       try {
-        const parsed = JSON.parse(stored);
+        const parsed = JSON.parse(storedUser);
         if (parsed.name && parsed.email) {
           setUser(parsed);
           setAuthName(parsed.name);
           setAuthEmail(parsed.email);
         }
-      } catch (e) {}
+      } catch {}
+    }
+
+    if (token) {
+      fetch(`${API_URL}/api/auth/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error("Invalid session");
+          return res.json();
+        })
+        .then((data) => {
+          if (data.success && data.user) {
+            setUser(data.user);
+            setAuthName(data.user.name);
+            setAuthEmail(data.user.email);
+            localStorage.setItem("together_user", JSON.stringify(data.user));
+          }
+        })
+        .catch(() => {
+          localStorage.removeItem("together_token");
+          localStorage.removeItem("together_user");
+          setUser(null);
+        });
     }
   }, []);
 
-  function handleSaveUser(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!authName.trim() || !authEmail.trim()) return;
-    const userData = { name: authName.trim(), email: authEmail.trim() };
-    setUser(userData);
-    localStorage.setItem("together_user", JSON.stringify(userData));
-    setShowAuthModal(false);
+    setAuthError("");
+
+    if (!authEmail.trim() || !authPassword) {
+      setAuthError("Please fill in all required fields.");
+      return;
+    }
+
+    if (authMode === "signup" && !authName.trim()) {
+      setAuthError("Please enter your name.");
+      return;
+    }
+
+    if (authMode === "signup" && authPassword.length < 6) {
+      setAuthError("Password must be at least 6 characters.");
+      return;
+    }
+
+    try {
+      setAuthLoading(true);
+
+      const endpoint =
+        authMode === "signup"
+          ? `${API_URL}/api/auth/signup`
+          : `${API_URL}/api/auth/signin`;
+
+      const payload =
+        authMode === "signup"
+          ? {
+              name: authName.trim(),
+              email: authEmail.trim(),
+              password: authPassword,
+            }
+          : {
+              email: authEmail.trim(),
+              password: authPassword,
+            };
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Authentication failed");
+      }
+
+      localStorage.setItem("together_token", data.token);
+      localStorage.setItem("together_user", JSON.stringify(data.user));
+      setUser(data.user);
+      setAuthPassword("");
+      setShowAuthModal(false);
+
+      window.dispatchEvent(new Event("together_auth_changed"));
+    } catch (err) {
+      setAuthError(err instanceof Error ? err.message : "Authentication failed");
+    } finally {
+      setAuthLoading(false);
+    }
   }
 
-  function handleSignOut() {
+  async function handleSignOut() {
+    const token = localStorage.getItem("together_token");
+    if (token) {
+      try {
+        await fetch(`${API_URL}/api/auth/signout`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      } catch {}
+    }
+
     setUser(null);
     setAuthName("");
     setAuthEmail("");
+    setAuthPassword("");
+    setAuthError("");
+    localStorage.removeItem("together_token");
     localStorage.removeItem("together_user");
     setShowAuthModal(false);
+
+    window.dispatchEvent(new Event("together_auth_changed"));
   }
 
   return (
@@ -81,7 +195,10 @@ export default function Header({ currentStep }: HeaderProps) {
           {user ? (
             <button
               type="button"
-              onClick={() => setShowAuthModal(true)}
+              onClick={() => {
+                setAuthError("");
+                setShowAuthModal(true);
+              }}
               className="oval-pill-btn border-black bg-black text-white text-[11px] font-bold shadow-sm transition hover:bg-black/80"
             >
               👤 {user.name}
@@ -89,7 +206,10 @@ export default function Header({ currentStep }: HeaderProps) {
           ) : (
             <button
               type="button"
-              onClick={() => setShowAuthModal(true)}
+              onClick={() => {
+                setAuthError("");
+                setShowAuthModal(true);
+              }}
               className="oval-pill-btn border-black/20 bg-white text-slate-900 text-[11px] font-bold shadow-sm transition hover:border-black hover:bg-black hover:text-white"
             >
               Sign In / Sign Up
@@ -114,7 +234,11 @@ export default function Header({ currentStep }: HeaderProps) {
                   Account Management
                 </span>
                 <h2 className="text-xl font-bold text-slate-950">
-                  {user ? "Your Profile" : "Sign In or Sign Up"}
+                  {user
+                    ? "Your Profile"
+                    : authMode === "signup"
+                    ? "Create Account"
+                    : "Sign In"}
                 </h2>
               </div>
               <button
@@ -142,20 +266,60 @@ export default function Header({ currentStep }: HeaderProps) {
                 </button>
               </div>
             ) : (
-              <form onSubmit={handleSaveUser} className="py-5 space-y-4">
-                <div>
-                  <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-black/60">
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={authName}
-                    onChange={(e) => setAuthName(e.target.value)}
-                    placeholder="e.g. Jeevan Yadav"
-                    className="w-full rounded-xl border border-black/15 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-black"
-                  />
+              <form onSubmit={handleSubmit} className="py-5 space-y-4">
+                {/* Toggle Sign In / Sign Up */}
+                <div className="grid grid-cols-2 gap-2 rounded-2xl bg-black/5 p-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthMode("signin");
+                      setAuthError("");
+                    }}
+                    className={`rounded-xl py-2 text-xs font-bold transition ${
+                      authMode === "signin"
+                        ? "bg-white text-black shadow-xs"
+                        : "text-black/60 hover:text-black"
+                    }`}
+                  >
+                    Sign In
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthMode("signup");
+                      setAuthError("");
+                    }}
+                    className={`rounded-xl py-2 text-xs font-bold transition ${
+                      authMode === "signup"
+                        ? "bg-white text-black shadow-xs"
+                        : "text-black/60 hover:text-black"
+                    }`}
+                  >
+                    Create Account
+                  </button>
                 </div>
+
+                {authError && (
+                  <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-700">
+                    {authError}
+                  </div>
+                )}
+
+                {authMode === "signup" && (
+                  <div>
+                    <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-black/60">
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={authName}
+                      onChange={(e) => setAuthName(e.target.value)}
+                      placeholder="e.g. Jeevan Yadav"
+                      className="w-full rounded-xl border border-black/15 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-black"
+                    />
+                  </div>
+                )}
 
                 <div>
                   <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-black/60">
@@ -171,11 +335,34 @@ export default function Header({ currentStep }: HeaderProps) {
                   />
                 </div>
 
+                <div>
+                  <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-black/60">
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    value={authPassword}
+                    onChange={(e) => setAuthPassword(e.target.value)}
+                    placeholder={
+                      authMode === "signup"
+                        ? "At least 6 characters"
+                        : "Your account password"
+                    }
+                    className="w-full rounded-xl border border-black/15 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-black"
+                  />
+                </div>
+
                 <button
                   type="submit"
-                  className="oval-pill-btn w-full border-black bg-black py-3.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-black/80 transition shadow-sm"
+                  disabled={authLoading}
+                  className="oval-pill-btn w-full border-black bg-black py-3.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-black/80 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Continue & Save Account
+                  {authLoading
+                    ? "Please wait..."
+                    : authMode === "signup"
+                    ? "Create Account"
+                    : "Sign In"}
                 </button>
               </form>
             )}

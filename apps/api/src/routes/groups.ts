@@ -6,8 +6,8 @@ const router = Router();
 
 const createGroupSchema = z.object({
   name: z.string().trim().min(2).max(100),
-  email: z.string().email(),
-  userName: z.string().trim().min(2).max(100),
+  email: z.string().email().optional(),
+  userName: z.string().trim().min(2).max(100).optional(),
 });
 
 const memberSchema = z.object({
@@ -16,6 +16,68 @@ const memberSchema = z.object({
 });
 
 const DEMO_USER_EMAIL = "demo@together.local";
+
+router.get("/", async (req, res) => {
+  try {
+    let userId = req.user?.id;
+
+    if (!userId) {
+      const demoUser = await prisma.user.findUnique({
+        where: {
+          email: DEMO_USER_EMAIL,
+        },
+      });
+      userId = demoUser?.id;
+    }
+
+    if (!userId) {
+      return res.status(200).json({
+        success: true,
+        groups: [],
+      });
+    }
+
+    const memberships = await prisma.groupMember.findMany({
+      where: {
+        userId,
+      },
+      include: {
+        group: {
+          include: {
+            creator: true,
+            members: {
+              include: {
+                user: true,
+              },
+            },
+            purchases: {
+              include: {
+                items: true,
+                approval: true,
+                payment: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        joinedAt: "desc",
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      groups: memberships.map((membership) => membership.group),
+    });
+  } catch (error) {
+    console.error("Failed to load groups:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to load groups",
+    });
+  }
+});
 
 router.post("/", async (req, res) => {
   const parsed = createGroupSchema.safeParse(req.body);
@@ -31,18 +93,25 @@ router.post("/", async (req, res) => {
   try {
     const { name, email, userName } = parsed.data;
 
-    const user = await prisma.user.upsert({
-      where: {
-        email,
-      },
-      update: {
-        name: userName,
-      },
-      create: {
-        name: userName,
-        email,
-      },
-    });
+    let user = req.user;
+
+    if (!user) {
+      const userEmail = email ?? DEMO_USER_EMAIL;
+      const userDisplayName = userName ?? "Demo User";
+
+      user = await prisma.user.upsert({
+        where: {
+          email: userEmail,
+        },
+        update: {
+          name: userDisplayName,
+        },
+        create: {
+          name: userDisplayName,
+          email: userEmail,
+        },
+      });
+    }
 
     const group = await prisma.group.create({
       data: {
@@ -56,6 +125,7 @@ router.post("/", async (req, res) => {
         },
       },
       include: {
+        creator: true,
         members: {
           include: {
             user: true,
@@ -162,6 +232,9 @@ router.post("/:id/members", async (req, res) => {
       where: {
         id: groupId,
       },
+      include: {
+        members: true,
+      },
     });
 
     if (!group) {
@@ -169,6 +242,16 @@ router.post("/:id/members", async (req, res) => {
         success: false,
         message: "Group not found",
       });
+    }
+
+    if (req.user) {
+      const caller = group.members.find((m) => m.userId === req.user!.id);
+      if (!caller || caller.role !== "OWNER") {
+        return res.status(403).json({
+          success: false,
+          message: "Only the group owner can add members",
+        });
+      }
     }
 
     const user = await prisma.user.upsert({
@@ -261,6 +344,25 @@ router.delete("/:id/members/:userId", async (req, res) => {
       });
     }
 
+    if (req.user) {
+      const caller = await prisma.groupMember.findUnique({
+        where: {
+          groupId_userId: {
+            groupId,
+            userId: req.user.id,
+          },
+        },
+      });
+      const isOwner = caller?.role === "OWNER";
+      const isSelf = req.user.id === userId;
+      if (!isOwner && !isSelf) {
+        return res.status(403).json({
+          success: false,
+          message: "Not authorized to remove this member",
+        });
+      }
+    }
+
     await prisma.groupMember.delete({
       where: {
         groupId_userId: {
@@ -299,6 +401,9 @@ router.delete("/:id", async (req, res) => {
       where: {
         id: groupId,
       },
+      include: {
+        members: true,
+      },
     });
 
     if (!group) {
@@ -306,6 +411,16 @@ router.delete("/:id", async (req, res) => {
         success: false,
         message: "Group not found",
       });
+    }
+
+    if (req.user) {
+      const caller = group.members.find((m) => m.userId === req.user!.id);
+      if (!caller || caller.role !== "OWNER") {
+        return res.status(403).json({
+          success: false,
+          message: "Only the group owner can delete this group",
+        });
+      }
     }
 
     await prisma.$transaction(async (tx) => {

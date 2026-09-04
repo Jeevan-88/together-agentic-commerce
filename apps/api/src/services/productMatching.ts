@@ -10,6 +10,12 @@ export type ProductMatch = {
     name: string;
     description: string | null;
     pricePaise: number;
+    originalPricePaise?: number | null;
+    imageUrl?: string | null;
+    productUrl?: string | null;
+    category?: string | null;
+    rating?: number | null;
+    reviewsCount?: number | null;
     currency: string;
     merchant: string;
     metadata: unknown;
@@ -210,6 +216,34 @@ function metadataValue(
   return undefined;
 }
 
+function resolveProductCapacity(metadata: unknown): number | undefined {
+  const capLitres = metadataValue(metadata, "capacityLitres");
+  if (typeof capLitres === "number") return capLitres;
+  const capStr = metadataValue(metadata, "capacity");
+  if (typeof capStr === "string") {
+    const m = capStr.match(/(\d+(?:\.\d+)?)\s*(?:l|litre|litres|liter|liters)?/i);
+    if (m) {
+      const val = Number(m[1]);
+      if (Number.isFinite(val)) return val;
+    }
+  }
+  return undefined;
+}
+
+function resolveProductWeight(metadata: unknown): number | undefined {
+  const wtKg = metadataValue(metadata, "weightKg");
+  if (typeof wtKg === "number") return wtKg;
+  const wtStr = metadataValue(metadata, "weight");
+  if (typeof wtStr === "string") {
+    const m = wtStr.match(/(\d+(?:\.\d+)?)\s*(?:kg|kgs|kilogram|kilograms)?/i);
+    if (m) {
+      const val = Number(m[1]);
+      if (Number.isFinite(val)) return val;
+    }
+  }
+  return undefined;
+}
+
 function productSearchText(product: ProductWithMerchant): string {
   const metadata =
     product.metadata && typeof product.metadata === "object"
@@ -220,6 +254,7 @@ function productSearchText(product: ProductWithMerchant): string {
     [
       product.name,
       product.description ?? "",
+      product.category ?? "",
       product.merchant.name,
       metadata,
     ].join(" "),
@@ -249,9 +284,9 @@ function scoreProduct(
   }
 
   if (request.capacityLitres !== undefined) {
-    const capacity = metadataValue(product.metadata, "capacityLitres");
+    const capacity = resolveProductCapacity(product.metadata);
 
-    if (typeof capacity === "number") {
+    if (capacity !== undefined) {
       if (capacity >= request.capacityLitres) {
         score += 25;
         matchedCriteria.push("capacity");
@@ -268,9 +303,9 @@ function scoreProduct(
   }
 
   if (request.maxWeightKg !== undefined) {
-    const weight = metadataValue(product.metadata, "weightKg");
+    const weight = resolveProductWeight(product.metadata);
 
-    if (typeof weight === "number") {
+    if (weight !== undefined) {
       if (weight <= request.maxWeightKg) {
         score += 20;
         matchedCriteria.push("weight");
@@ -359,6 +394,12 @@ function scoreProduct(
       name: product.name,
       description: product.description,
       pricePaise: product.pricePaise,
+      originalPricePaise: product.originalPricePaise,
+      imageUrl: product.imageUrl,
+      productUrl: product.productUrl,
+      category: product.category,
+      rating: product.rating,
+      reviewsCount: product.reviewsCount,
       currency: product.currency,
       merchant: product.merchant.name,
       metadata: product.metadata,

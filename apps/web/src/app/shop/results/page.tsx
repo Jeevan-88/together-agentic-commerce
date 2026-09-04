@@ -32,6 +32,12 @@ type Product = {
     active: boolean;
   };
   pricePaise: number;
+  originalPricePaise?: number | null;
+  imageUrl?: string | null;
+  productUrl?: string | null;
+  category?: string | null;
+  rating?: number | null;
+  reviewsCount?: number | null;
   metadata?: ProductMetadata | null;
 };
 
@@ -41,149 +47,6 @@ type RecommendationMatch = {
   reasons: string[];
   matchedCriteria: string[];
 };
-
-function generate100Catalog(baseProducts: Product[]): Product[] {
-  const categories = ["Bags", "Audio", "Wearables", "Footwear", "Tech"];
-  const catalog: Product[] = [...baseProducts];
-
-  const templates: Record<string, Array<{ name: string; desc: string; price: number; img: string; keywords: string[] }>> = {
-    Bags: [
-      { name: "Urban Trail 25L", desc: "Lightweight travel backpack with 25L capacity.", price: 499900, img: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&auto=format&fit=crop&q=80", keywords: ["backpack", "travel", "bag"] },
-      { name: "Summit Trek 38L", desc: "Expedition backpack with internal frame.", price: 749900, img: "https://images.unsplash.com/photo-1546938576-6e6a64f317cc?w=600&auto=format&fit=crop&q=80", keywords: ["backpack", "hiking", "outdoor"] },
-      { name: "Alpine Daypack 18L", desc: "Compact daypack for hiking and daily commutes.", price: 329900, img: "https://images.unsplash.com/photo-1622560480605-d83c853bc5c3?w=600&auto=format&fit=crop&q=80", keywords: ["daypack", "hiking", "lightweight"] },
-      { name: "Voyager Carry 28L", desc: "Business travel pack with laptop sleeve.", price: 549900, img: "https://images.unsplash.com/photo-1581605405669-fcdf81165afa?w=600&auto=format&fit=crop&q=80", keywords: ["backpack", "business", "laptop"] },
-      { name: "Transit Weekender 32L", desc: "Hybrid duffel pack for 3-5 day getaways.", price: 689900, img: "https://images.unsplash.com/photo-1577733966973-d680bffd2e80?w=600&auto=format&fit=crop&q=80", keywords: ["duffel", "travel", "weekender"] },
-      { name: "Aero Duffel 40L", desc: "Water-resistant duffel bag with backpack straps.", price: 479900, img: "https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=600&auto=format&fit=crop&q=80", keywords: ["duffel", "gym", "waterproof"] },
-      { name: "LitePack 24L", desc: "Minimalist featherlight pack for city transit.", price: 439900, img: "https://images.unsplash.com/photo-1509762774605-f07235a08f1f?w=600&auto=format&fit=crop&q=80", keywords: ["backpack", "daily", "minimalist"] },
-      { name: "Commuter Slim 16L", desc: "Ultra-thin professional pack for laptops.", price: 299900, img: "https://images.unsplash.com/photo-1622560480654-d96214fdc887?w=600&auto=format&fit=crop&q=80", keywords: ["slim", "office", "laptop"] },
-      { name: "Sling Pouch 4L", desc: "Crossbody sling for phone and essentials.", price: 149900, img: "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=600&auto=format&fit=crop&q=80", keywords: ["sling", "crossbody", "pouch"] },
-      { name: "Canvas Explorer 30L", desc: "Vintage heavy canvas backpack with brass hardware.", price: 599900, img: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&auto=format&fit=crop&q=80", keywords: ["canvas", "vintage", "backpack"] },
-      { name: "Metro Rolltop 22L", desc: "Expandable waterproof rolltop pack.", price: 489900, img: "https://images.unsplash.com/photo-1581605405669-fcdf81165afa?w=600&auto=format&fit=crop&q=80", keywords: ["rolltop", "waterproof", "city"] },
-      { name: "Tactical Assault 45L", desc: "Heavy-duty MOLLE military style pack.", price: 829900, img: "https://images.unsplash.com/photo-1546938576-6e6a64f317cc?w=600&auto=format&fit=crop&q=80", keywords: ["tactical", "heavy duty", "large"] },
-      { name: "Leather Briefcase 15L", desc: "Full-grain executive leather briefcase.", price: 999900, img: "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=600&auto=format&fit=crop&q=80", keywords: ["leather", "briefcase", "office"] },
-      { name: "Solar Charge Pack 20L", desc: "Integrated solar panel pack for devices.", price: 649900, img: "https://images.unsplash.com/photo-1509762774605-f07235a08f1f?w=600&auto=format&fit=crop&q=80", keywords: ["solar", "charger", "backpack"] },
-      { name: "Anti-Theft Shield 25L", desc: "Hidden zipper anti-theft security bag.", price: 529900, img: "https://images.unsplash.com/photo-1622560480654-d96214fdc887?w=600&auto=format&fit=crop&q=80", keywords: ["anti-theft", "security", "travel"] },
-      { name: "Hydration Vest 10L", desc: "Ultra-running trail vest with 2L bladder.", price: 389900, img: "https://images.unsplash.com/photo-1622560480605-d83c853bc5c3?w=600&auto=format&fit=crop&q=80", keywords: ["hydration", "running", "vest"] },
-      { name: "Camera Case 25L", desc: "Modular padded DSLR camera gear backpack.", price: 899900, img: "https://images.unsplash.com/photo-1581605405669-fcdf81165afa?w=600&auto=format&fit=crop&q=80", keywords: ["camera", "photography", "padded"] },
-      { name: "Rolling Carry-on 35L", desc: "Spinner wheel convertible travel suitcase.", price: 949900, img: "https://images.unsplash.com/photo-1577733966973-d680bffd2e80?w=600&auto=format&fit=crop&q=80", keywords: ["rolling", "suitcase", "wheels"] },
-      { name: "Convertible Tote 18L", desc: "2-in-1 shoulder tote to backpack.", price: 369900, img: "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=600&auto=format&fit=crop&q=80", keywords: ["tote", "convertible", "women"] },
-      { name: "Ultra Packable 15L", desc: "Folds into pocket size for travel.", price: 189900, img: "https://images.unsplash.com/photo-1509762774605-f07235a08f1f?w=600&auto=format&fit=crop&q=80", keywords: ["packable", "foldable", "lightweight"] },
-    ],
-    Audio: [
-      { name: "Studio Pro ANC Headphones", desc: "Over-ear wireless headphones with ANC.", price: 899900, img: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=80", keywords: ["headphones", "anc", "audio"] },
-      { name: "Pulse Wireless Earbuds", desc: "True wireless earbuds with charging case.", price: 349900, img: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600&auto=format&fit=crop&q=80", keywords: ["earbuds", "wireless", "audio"] },
-      { name: "SoundWave Portable Speaker", desc: "Waterproof outdoor bluetooth speaker.", price: 279900, img: "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=600&auto=format&fit=crop&q=80", keywords: ["speaker", "bluetooth", "audio"] },
-      { name: "AirBeats Sport Earbuds", desc: "Earhook wireless earbuds for workouts.", price: 299900, img: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600&auto=format&fit=crop&q=80", keywords: ["earbuds", "sport", "gym"] },
-      { name: "AcousticBar Cinema Soundbar", desc: "Dolby Atmos 2.1 soundbar with subwoofer.", price: 1249900, img: "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=600&auto=format&fit=crop&q=80", keywords: ["soundbar", "tv", "audio"] },
-      { name: "HiFi Studio Monitor Speakers", desc: "Active bookshelf studio monitor pair.", price: 1499900, img: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=80", keywords: ["speakers", "studio", "hifi"] },
-      { name: "Clarity Podcasting USB Mic", desc: "Cardioid condenser microphone with stand.", price: 449900, img: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600&auto=format&fit=crop&q=80", keywords: ["mic", "microphone", "podcast"] },
-      { name: "Bone Conduction Sport Headphones", desc: "Open-ear bone conduction for running.", price: 599900, img: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=80", keywords: ["bone conduction", "open ear", "running"] },
-      { name: "Gaming Headset 7.1 Surround", desc: "RGB wired gaming headset with boom mic.", price: 389900, img: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=80", keywords: ["gaming", "headset", "surround"] },
-      { name: "Retro Vinyl Turntable Player", desc: "Bluetooth vinyl record player with speakers.", price: 899900, img: "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=600&auto=format&fit=crop&q=80", keywords: ["turntable", "vinyl", "retro"] },
-      { name: "Shower Proof Bluetooth Pod", desc: "Suction cup IPX7 shower speaker.", price: 129900, img: "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=600&auto=format&fit=crop&q=80", keywords: ["shower", "waterproof", "speaker"] },
-      { name: "Wireless Neckband Earphones", desc: "Magnetic neckband with 24-hour battery.", price: 179900, img: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600&auto=format&fit=crop&q=80", keywords: ["neckband", "earphones", "wireless"] },
-      { name: "Studio AMP DAC Converter", desc: "High-resolution desktop headphone amplifier.", price: 799900, img: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=80", keywords: ["amp", "dac", "hi-res"] },
-      { name: "BoomBox Party Speaker 50W", desc: "Loud party speaker with LED strobe light.", price: 699900, img: "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=600&auto=format&fit=crop&q=80", keywords: ["boombox", "party", "loud"] },
-      { name: "NoiseShield Noise Isolation Buds", desc: "In-ear foam tip noise isolating earbuds.", price: 219900, img: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600&auto=format&fit=crop&q=80", keywords: ["earbuds", "in-ear", "isolation"] },
-      { name: "Multi-Room Wi-Fi Sound Hub", desc: "AirPlay 2 & Spotify Connect audio receiver.", price: 549900, img: "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=600&auto=format&fit=crop&q=80", keywords: ["wifi", "airplay", "receiver"] },
-      { name: "DJ Master Monitor Headphones", desc: "Foldable DJ headphones with swivel cups.", price: 649900, img: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=80", keywords: ["dj", "headphones", "monitor"] },
-      { name: "Pocket FM Bluetooth Radio", desc: "Retro pocket radio with bluetooth 5.3.", price: 159900, img: "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=600&auto=format&fit=crop&q=80", keywords: ["radio", "fm", "pocket"] },
-      { name: "Vocal Studio Condenser Mic", desc: "XLR professional studio recording mic.", price: 849900, img: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600&auto=format&fit=crop&q=80", keywords: ["xlr", "vocal", "mic"] },
-      { name: "Compact Sound Pill 10W", desc: "Ultra-portable travel sound pill.", price: 199900, img: "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=600&auto=format&fit=crop&q=80", keywords: ["sound pill", "portable", "compact"] },
-    ],
-    Wearables: [
-      { name: "Apex Pro GPS Smartwatch", desc: "AMOLED smartwatch with 12-day battery.", price: 1149900, img: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80", keywords: ["smartwatch", "watch", "gps"] },
-      { name: "Horizon Analog Watch", desc: "Stainless steel watch with leather strap.", price: 629900, img: "https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=600&auto=format&fit=crop&q=80", keywords: ["watch", "analog", "leather"] },
-      { name: "PulseFit Tracker Band", desc: "Activity tracker band with SpO2 sensor.", price: 199900, img: "https://images.unsplash.com/photo-1575311373937-040b8e1fd5b6?w=600&auto=format&fit=crop&q=80", keywords: ["tracker", "band", "fitness"] },
-      { name: "Summit Altitude Outdoor Watch", desc: "Barometer & altimeter rugged mountain watch.", price: 1399900, img: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80", keywords: ["watch", "altimeter", "outdoor"] },
-      { name: "Smart Health Titanium Ring", desc: "Continuous sleep & HRV monitoring ring.", price: 899900, img: "https://images.unsplash.com/photo-1575311373937-040b8e1fd5b6?w=600&auto=format&fit=crop&q=80", keywords: ["ring", "health", "smart ring"] },
-      { name: "Golf Course GPS Watch", desc: "Preloaded 40,000 golf courses watch.", price: 999900, img: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80", keywords: ["golf", "watch", "gps"] },
-      { name: "Kids Safety GPS Watch", desc: "SOS emergency button & voice calling watch.", price: 299900, img: "https://images.unsplash.com/photo-1575311373937-040b8e1fd5b6?w=600&auto=format&fit=crop&q=80", keywords: ["kids", "watch", "safety"] },
-      { name: "SwimProof Pro Swim Watch", desc: "Stroke tracking & lap counter water watch.", price: 549900, img: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80", keywords: ["swim", "waterproof", "watch"] },
-      { name: "Classic Executive Chronograph", desc: "Automatic movement luxury steel watch.", price: 1699900, img: "https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=600&auto=format&fit=crop&q=80", keywords: ["watch", "luxury", "automatic"] },
-      { name: "Marathon Ultra GPS Watch", desc: "100-hour GPS battery life for ultra runners.", price: 1549900, img: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80", keywords: ["marathon", "watch", "ultra"] },
-      { name: "Oxygen ECG Care Watch", desc: "Medical grade ECG & blood oxygen watch.", price: 1299900, img: "https://images.unsplash.com/photo-1575311373937-040b8e1fd5b6?w=600&auto=format&fit=crop&q=80", keywords: ["ecg", "medical", "watch"] },
-      { name: "Minimalist OLED Step Tracker", desc: "Lightweight clip-on step counter.", price: 119900, img: "https://images.unsplash.com/photo-1575311373937-040b8e1fd5b6?w=600&auto=format&fit=crop&q=80", keywords: ["pedometer", "steps", "tracker"] },
-      { name: "Solar Outdoor Adventure Watch", desc: "Solar powered battery extension watch.", price: 1449900, img: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80", keywords: ["solar", "adventure", "watch"] },
-      { name: "Tactical Stealth Smartwatch", desc: "Night vision mode & stealth killswitch watch.", price: 1799900, img: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80", keywords: ["tactical", "stealth", "watch"] },
-      { name: "Recovery Sleep Band", desc: "Screenless sleep & recovery tracking band.", price: 449900, img: "https://images.unsplash.com/photo-1575311373937-040b8e1fd5b6?w=600&auto=format&fit=crop&q=80", keywords: ["sleep", "recovery", "band"] },
-      { name: "Vintage Digital Retro Watch", desc: "80s style gold stainless digital watch.", price: 249900, img: "https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=600&auto=format&fit=crop&q=80", keywords: ["digital", "retro", "watch"] },
-      { name: "Cycling Cadence Smartband", desc: "Handlebar mount & cadence sensor band.", price: 349900, img: "https://images.unsplash.com/photo-1575311373937-040b8e1fd5b6?w=600&auto=format&fit=crop&q=80", keywords: ["cycling", "cadence", "watch"] },
-      { name: "Sport Stopwatch Pro 100", desc: "Dual split memory referee stopwatch.", price: 159900, img: "https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=600&auto=format&fit=crop&q=80", keywords: ["stopwatch", "timer", "sports"] },
-      { name: "Dive Watch 300M Diver", desc: "Rotating bezel 300m water diver watch.", price: 1199900, img: "https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=600&auto=format&fit=crop&q=80", keywords: ["diver", "waterproof", "watch"] },
-      { name: "Smart Body Temperature Band", desc: "Fever alarm & skin temp sensor band.", price: 229900, img: "https://images.unsplash.com/photo-1575311373937-040b8e1fd5b6?w=600&auto=format&fit=crop&q=80", keywords: ["temperature", "health", "band"] },
-    ],
-    Footwear: [
-      { name: "CloudGlide Everyday Sneaker", desc: "Ultra-cushioned lifestyle sneaker.", price: 449900, img: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&auto=format&fit=crop&q=80", keywords: ["sneakers", "shoes", "running"] },
-      { name: "TrailGrip Hiking Shoes", desc: "Waterproof low-cut mountain trail shoe.", price: 599900, img: "https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=600&auto=format&fit=crop&q=80", keywords: ["shoes", "hiking", "waterproof"] },
-      { name: "Urban Runner Velocity", desc: "Featherweight marathon carbon plate shoe.", price: 379900, img: "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=600&auto=format&fit=crop&q=80", keywords: ["running", "shoes", "sneakers"] },
-      { name: "Waterproof Mountain Boot", desc: "High-ankle leather boot for rough terrains.", price: 799900, img: "https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=600&auto=format&fit=crop&q=80", keywords: ["boots", "hiking", "leather"] },
-      { name: "Athletic Gym Trainer Shoe", desc: "Flat sole cross-trainer for weightlifting.", price: 429900, img: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&auto=format&fit=crop&q=80", keywords: ["gym", "shoes", "training"] },
-      { name: "Recovery Foam Slide Sandal", desc: "Post-workout thick arch support slides.", price: 189900, img: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&auto=format&fit=crop&q=80", keywords: ["slides", "sandals", "recovery"] },
-      { name: "Leather City Penny Loafer", desc: "Handcrafted slip-on formal dress shoe.", price: 699900, img: "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=600&auto=format&fit=crop&q=80", keywords: ["loafers", "formal", "shoes"] },
-      { name: "Canvas Slip-On Sneaker", desc: "Classic casual vulcanized canvas shoe.", price: 219900, img: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&auto=format&fit=crop&q=80", keywords: ["canvas", "slip-on", "sneakers"] },
-      { name: "Barefoot Minimalist Trail Shoe", desc: "Wide toe box zero-drop running shoe.", price: 489900, img: "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=600&auto=format&fit=crop&q=80", keywords: ["barefoot", "minimalist", "running"] },
-      { name: "High-Top Court Basketball Shoe", desc: "Ankle lock air cushion basketball shoe.", price: 649900, img: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&auto=format&fit=crop&q=80", keywords: ["basketball", "high-top", "shoes"] },
-      { name: "Breathable Mesh Summer Walker", desc: "Ultra-ventilated lightweight mesh shoe.", price: 289900, img: "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=600&auto=format&fit=crop&q=80", keywords: ["mesh", "summer", "walking"] },
-      { name: "Orthopedic Comfort Walking Shoe", desc: "Extra depth cushioned walking shoe.", price: 399900, img: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&auto=format&fit=crop&q=80", keywords: ["orthopedic", "comfort", "shoes"] },
-      { name: "Winter Thermal Snow Boot", desc: "Fleece lined waterproof snow boot.", price: 849900, img: "https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=600&auto=format&fit=crop&q=80", keywords: ["snow", "winter", "boots"] },
-      { name: "Retro Classic 90s Trainer", desc: "Chunky retro lifestyle sneaker.", price: 529900, img: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&auto=format&fit=crop&q=80", keywords: ["retro", "chunky", "sneakers"] },
-      { name: "Reflective Night Runner Shoe", desc: "360-degree high visibility running shoe.", price: 469900, img: "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=600&auto=format&fit=crop&q=80", keywords: ["reflective", "night", "running"] },
-      { name: "Carbon Fiber Super Racer", desc: "Marathon race shoe with maximum energy.", price: 1199900, img: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&auto=format&fit=crop&q=80", keywords: ["carbon", "racer", "marathon"] },
-      { name: "Suede Chelsea Ankle Boot", desc: "Elastic side panel stylish Chelsea boot.", price: 749900, img: "https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=600&auto=format&fit=crop&q=80", keywords: ["chelsea", "suede", "boots"] },
-      { name: "Spikeless Golf Sport Shoe", desc: "Water-resistant traction spikeless shoe.", price: 589900, img: "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=600&auto=format&fit=crop&q=80", keywords: ["golf", "shoes", "spikeless"] },
-      { name: "Lightweight Track Spike Shoe", desc: "Sprint track spike shoe for competition.", price: 419900, img: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&auto=format&fit=crop&q=80", keywords: ["track", "spikes", "sprint"] },
-      { name: "Water Sport Aqua Shoe", desc: "Quick dry rubber sole beach aqua shoe.", price: 169900, img: "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=600&auto=format&fit=crop&q=80", keywords: ["aqua", "water", "beach"] },
-    ],
-    Tech: [
-      { name: "Magnetic 3-in-1 Foldable Charger", desc: "Wireless charging station for phone and watch.", price: 249900, img: "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=600&auto=format&fit=crop&q=80", keywords: ["charger", "wireless", "tech"] },
-      { name: "Leather Laptop Sleeve 14-inch", desc: "Water-resistant padded laptop case.", price: 189900, img: "https://images.unsplash.com/photo-1544816155-12df9643f363?w=600&auto=format&fit=crop&q=80", keywords: ["laptop", "sleeve", "tech"] },
-      { name: "Tech Cable Portfolio Organizer", desc: "Zippered accessory pouch for electronics.", price: 129900, img: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=600&auto=format&fit=crop&q=80", keywords: ["cable", "organizer", "pouch"] },
-      { name: "65W GaN Fast Wall Charger", desc: "Dual USB-C PD fast charger adapter.", price: 219900, img: "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=600&auto=format&fit=crop&q=80", keywords: ["charger", "gan", "usb-c"] },
-      { name: "20,000mAh Power Bank 45W", desc: "High capacity power bank for laptop.", price: 349900, img: "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=600&auto=format&fit=crop&q=80", keywords: ["power bank", "battery", "portable"] },
-      { name: "Mechanical Wireless Keyboard", desc: "Hot-swappable RGB mechanical keyboard.", price: 599900, img: "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=600&auto=format&fit=crop&q=80", keywords: ["keyboard", "mechanical", "tech"] },
-      { name: "Ergonomic Vertical Wireless Mouse", desc: "Reduces wrist strain with silent clicks.", price: 279900, img: "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=600&auto=format&fit=crop&q=80", keywords: ["mouse", "ergonomic", "wireless"] },
-      { name: "USB-C 10-in-1 Aluminum Hub", desc: "HDMI 4K, SD card, Ethernet, PD hub.", price: 399900, img: "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=600&auto=format&fit=crop&q=80", keywords: ["hub", "usb-c", "adapter"] },
-      { name: "Aluminium Laptop Riser Stand", desc: "Heat dissipation foldable laptop stand.", price: 169900, img: "https://images.unsplash.com/photo-1544816155-12df9643f363?w=600&auto=format&fit=crop&q=80", keywords: ["stand", "laptop", "desk"] },
-      { name: "Portable External SSD 1TB", desc: "1050MB/s USB 3.2 Gen2 fast drive.", price: 799900, img: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=600&auto=format&fit=crop&q=80", keywords: ["ssd", "storage", "hard drive"] },
-      { name: "Smart Monitor LED Light Bar", desc: "Screenbar eye-care light with auto-dimming.", price: 319900, img: "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=600&auto=format&fit=crop&q=80", keywords: ["light bar", "lamp", "desk"] },
-      { name: "Full HD 1080p WebCam with Mic", desc: "Autofocus webcam with privacy cover.", price: 259900, img: "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=600&auto=format&fit=crop&q=80", keywords: ["webcam", "camera", "video"] },
-      { name: "Precision Stylus Pen for Tablet", desc: "Palm rejection 4096 pressure stylus.", price: 289900, img: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=600&auto=format&fit=crop&q=80", keywords: ["stylus", "pen", "tablet"] },
-      { name: "MagSafe Car Mount Wireless Charger", desc: "Air vent 15W magnetic car charger.", price: 199900, img: "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=600&auto=format&fit=crop&q=80", keywords: ["car mount", "magsafe", "charger"] },
-      { name: "15.6-inch Portable USB-C Monitor", desc: "FHD IPS ultra-thin dual display monitor.", price: 1299900, img: "https://images.unsplash.com/photo-1544816155-12df9643f363?w=600&auto=format&fit=crop&q=80", keywords: ["monitor", "display", "portable"] },
-      { name: "Wireless Presenter Laser Remote", desc: "2.4GHz slide pointer remote for pitch.", price: 139900, img: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=600&auto=format&fit=crop&q=80", keywords: ["presenter", "laser", "remote"] },
-      { name: "Smart Wi-Fi Power Strip Duo", desc: "Surge protector with app timer control.", price: 229900, img: "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=600&auto=format&fit=crop&q=80", keywords: ["smart plug", "power strip", "wifi"] },
-      { name: "Bluetooth Precision Trackpad", desc: "Glass multi-touch surface trackpad.", price: 499900, img: "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=600&auto=format&fit=crop&q=80", keywords: ["trackpad", "touchpad", "mac"] },
-      { name: "Thermal Wireless Label Printer", desc: "Inkless shipping label sticker printer.", price: 449900, img: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=600&auto=format&fit=crop&q=80", keywords: ["printer", "label", "shipping"] },
-      { name: "USB Silent Desk Cooling Fan", desc: "3-speed rechargeable personal fan.", price: 119900, img: "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=600&auto=format&fit=crop&q=80", keywords: ["fan", "desk", "usb"] },
-    ],
-  };
-
-  categories.forEach((cat) => {
-    const list = templates[cat] || [];
-    list.forEach((t, i) => {
-      catalog.push({
-        id: `gen-${cat.toLowerCase()}-${i + 1}`,
-        name: t.name,
-        description: t.desc,
-        merchant: "TOGETHER Verified Merchant",
-        pricePaise: t.price,
-        metadata: {
-          category: cat,
-          imageUrl: t.img,
-          originalPricePaise: Math.round(t.price * 1.3),
-          discountPercent: 23,
-          rating: 4.8,
-          reviewsCount: 150 + i * 12,
-          keywords: t.keywords,
-        },
-      });
-    });
-  });
-
-  return catalog;
-}
-
 function ResultsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -217,8 +80,7 @@ function ResultsContent() {
         }
 
         const allProducts: Product[] = productsData.products || [];
-        const full100Catalog = generate100Catalog(allProducts);
-        setProducts(full100Catalog);
+        setProducts(allProducts);
 
         // 2. If request text is provided, fetch scored recommendations
         if (request && request.trim().length >= 3) {
@@ -254,6 +116,29 @@ function ResultsContent() {
         ? product.merchant
         : product.merchant?.name || "Merchant";
 
+    const imageUrl =
+      product.imageUrl ||
+      product.metadata?.imageUrl ||
+      "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&auto=format&fit=crop&q=80";
+
+    const originalPricePaise =
+      product.originalPricePaise ??
+      product.metadata?.originalPricePaise ??
+      Math.round(product.pricePaise * 1.3);
+
+    const discountPercent =
+      product.metadata?.discountPercent ??
+      (originalPricePaise
+        ? Math.round(
+            ((originalPricePaise - product.pricePaise) / originalPricePaise) *
+              100,
+          )
+        : null);
+
+    const category =
+      product.category || product.metadata?.category || "Commerce";
+    const rating = product.rating ?? product.metadata?.rating ?? 4.8;
+
     const params = new URLSearchParams();
     params.set("productId", product.id);
     params.set("product", product.name);
@@ -270,20 +155,20 @@ function ResultsContent() {
       params.set("groupId", groupId);
     }
 
-    if (product.metadata?.imageUrl) {
-      params.set("imageUrl", product.metadata.imageUrl);
+    if (imageUrl) {
+      params.set("imageUrl", imageUrl);
     }
-    if (product.metadata?.originalPricePaise) {
-      params.set("originalPricePaise", String(product.metadata.originalPricePaise));
+    if (originalPricePaise) {
+      params.set("originalPricePaise", String(originalPricePaise));
     }
-    if (product.metadata?.discountPercent) {
-      params.set("discountPercent", String(product.metadata.discountPercent));
+    if (discountPercent) {
+      params.set("discountPercent", String(discountPercent));
     }
-    if (product.metadata?.category) {
-      params.set("category", product.metadata.category);
+    if (category) {
+      params.set("category", category);
     }
-    if (product.metadata?.rating) {
-      params.set("rating", String(product.metadata.rating));
+    if (rating) {
+      params.set("rating", String(rating));
     }
 
     router.push(`/shop/proposal?${params.toString()}`);
@@ -292,7 +177,7 @@ function ResultsContent() {
   // Filter products by selected category
   const filteredProducts = products.filter((p) => {
     if (activeCategory === "All") return true;
-    const cat = p.metadata?.category;
+    const cat = p.category || p.metadata?.category;
     return cat?.toLowerCase() === activeCategory.toLowerCase();
   });
 
@@ -500,12 +385,26 @@ function ResultsContent() {
                     : product.merchant?.name || "Merchant";
 
                 const metadata = product.metadata || {};
-                const imageUrl = metadata.imageUrl || "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&auto=format&fit=crop&q=80";
-                const originalPricePaise = metadata.originalPricePaise;
-                const discountPercent = metadata.discountPercent;
-                const rating = metadata.rating || 4.8;
-                const reviewsCount = metadata.reviewsCount || 120;
-                const category = metadata.category || "Commerce";
+                const imageUrl =
+                  product.imageUrl ||
+                  metadata.imageUrl ||
+                  "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&auto=format&fit=crop&q=80";
+                const originalPricePaise =
+                  product.originalPricePaise || metadata.originalPricePaise;
+                const discountPercent =
+                  metadata.discountPercent ||
+                  (originalPricePaise
+                    ? Math.round(
+                        ((originalPricePaise - product.pricePaise) /
+                          originalPricePaise) *
+                          100,
+                      )
+                    : null);
+                const rating = product.rating || metadata.rating || 4.8;
+                const reviewsCount =
+                  product.reviewsCount || metadata.reviewsCount || 120;
+                const category =
+                  product.category || metadata.category || "Commerce";
 
                 const isTopMatch = recommendation && recommendation.product.id === product.id;
 

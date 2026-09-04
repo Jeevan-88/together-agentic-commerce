@@ -57,6 +57,39 @@ function verifySignature(
   return crypto.timingSafeEqual(generatedBuffer, receivedBuffer);
 }
 
+router.get("/", async (req, res) => {
+  try {
+    let userId = req.user?.id;
+
+    if (!userId) {
+      const demoUser = await prisma.user.findUnique({
+        where: { email: DEMO_USER_EMAIL },
+      });
+      userId = demoUser?.id;
+    }
+
+    if (!userId) {
+      return res.json({ success: true, purchases: [] });
+    }
+
+    const purchases = await prisma.purchase.findMany({
+      where: { userId },
+      include: {
+        items: true,
+        approval: true,
+        payment: true,
+        group: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return res.json({ success: true, purchases });
+  } catch (error) {
+    console.error("Failed to load purchases:", error);
+    return res.status(500).json({ success: false, message: "Failed to load purchases" });
+  }
+});
+
 router.post("/", async (req, res) => {
   const parsed = purchaseSchema.safeParse(req.body);
 
@@ -130,16 +163,18 @@ router.post("/", async (req, res) => {
     const purchase = await prisma.$transaction(
       
   async (tx: Prisma.TransactionClient) =>  {
-        const user = await tx.user.upsert({
-          where: {
-            email: DEMO_USER_EMAIL,
-          },
-          update: {},
-          create: {
-            name: "Demo User",
-            email: DEMO_USER_EMAIL,
-          },
-        });
+        const user =
+          req.user ??
+          (await tx.user.upsert({
+            where: {
+              email: DEMO_USER_EMAIL,
+            },
+            update: {},
+            create: {
+              name: "Demo User",
+              email: DEMO_USER_EMAIL,
+            },
+          }));
 
         let groupId: string | undefined;
 
