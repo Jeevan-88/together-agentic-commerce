@@ -285,7 +285,7 @@ function scoreProduct(
   }
 
   if (keywordMatches > 0) {
-    const keywordScore = Math.min(keywordMatches * 8, 25);
+    const keywordScore = Math.min(keywordMatches * 15, 50);
 
     score += keywordScore;
     matchedCriteria.push("request keywords");
@@ -293,6 +293,11 @@ function scoreProduct(
     reasons.push(
       `It matches ${keywordMatches} part${keywordMatches === 1 ? "" : "s"} of your request.`,
     );
+  }
+
+  const rating = metadataValue(product.metadata, "rating");
+  if (typeof rating === "number") {
+    score += Math.round(rating * 3);
   }
 
   const totalPricePaise = product.pricePaise * request.quantity;
