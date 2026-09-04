@@ -8,6 +8,34 @@
 
 ---
 
+## 🎬 Project Walkthrough & Live Demo Video
+
+[![TOGETHER - 10-Minute End-to-End Walkthrough Demo](docs/images/video-walkthrough-banner.png)](https://together-web-kohl.vercel.app)
+
+<div align="center">
+
+[![Live Demo](https://img.shields.io/badge/Live_Website-together--web--kohl.vercel.app-blue?style=for-the-badge&logo=vercel)](https://together-web-kohl.vercel.app)
+[![API Status](https://img.shields.io/badge/Production_API-together--api--rho.vercel.app-green?style=for-the-badge&logo=node.js)](https://together-api-rho.vercel.app)
+[![Database](https://img.shields.io/badge/PostgreSQL-Neon_Cloud-336791?style=for-the-badge&logo=postgresql)](https://together-api-rho.vercel.app)
+[![Payments](https://img.shields.io/badge/Razorpay-Test_Mode_Verified-02042B?style=for-the-badge&logo=razorpay)](https://together-web-kohl.vercel.app/shop/payment)
+
+</div>
+
+### ⏱️ Video Walkthrough Chapters & Timestamps (Duration: 10:42)
+For recruiters and technical evaluators, here is the structured breakdown of the 10-minute end-to-end walkthrough video:
+
+| Timestamp | Demonstrated Feature | Architectural Highlights |
+| :--- | :--- | :--- |
+| **00:00 – 01:20** | **Architecture & System Design** | Decoupled Next.js 16 frontend + Express API + Neon PostgreSQL, server-enforced pricing, security boundaries. |
+| **01:20 – 02:45** | **Natural Language Intent Matching** | Voice dictation & NLP intent parsing for budget caps, quantities, and modifiers (`cheaper`, `top rated`, `lightweight`). |
+| **02:45 – 04:15** | **Live PostgreSQL Catalog & Search** | Real database catalog with 21 products, dynamic discount calculation, merchant links, and ratings. |
+| **04:15 – 05:40** | **Side-by-Side Product Comparison** | Interactive comparison tray, 2-to-3 column specification matrix, dynamic "Lowest Price" and "Top Rated" flags. |
+| **05:40 – 07:15** | **Group Shopping & Consensus Flow** | Real authentication sessions, shopping group creation, role permissions (`OWNER` vs `MEMBER`), and approval gates. |
+| **07:15 – 08:45** | **Razorpay Test Mode Checkout & Verification** | Modal integration, dual-layer signature verification (HMAC SHA-256) with server-to-server API fallback. |
+| **08:45 – 10:42** | **Webhook Idempotency & Audit Trail** | Cryptographic webhook signature check, duplicate event rejection via `eventId` constraint, immutable audit logs. |
+
+---
+
 ## Diagrams
 
 ### 1. System Architecture
