@@ -86,52 +86,6 @@
 
 ---
 
-## Technical Questions & Answers
-
-### Why is the web application separated from the API?
-Separating the Next.js web application from the Express backend API ensures strict decoupled architecture. It enables external AI agents, mobile apps, or third-party integrations to transact with the platform directly via REST endpoints without relying on Next.js frontend state.
-
-### Why is PostgreSQL used?
-PostgreSQL provides ACID-compliant relational transactions, strong foreign key guarantees, and reliable concurrency controls necessary for tracking order financial states, user memberships, audit logs, and idempotent webhook events without race conditions.
-
-### Why is payment creation handled by the server?
-Creating payment orders on the server ensures that sensitive credentials (such as `RAZORPAY_KEY_SECRET`) remain protected. It prevents clients from manipulating order amounts, currency settings, or merchant identifiers before payment modal execution.
-
-### How is the payment amount protected?
-The payment amount (`amountPaise`) is computed server-side by fetching stored product pricing directly from the database. Client request payloads cannot override or alter the calculated order total.
-
-### How does product matching rank products?
-The matching engine scores catalog items using keyword frequency, text relevance against the user's intent query, and price proximity within the specified budget bounds.
-
-### How is group membership checked?
-When a group purchase request or approval is received, the API queries the `GroupMember` database table to verify that the requesting user ID is an active member of the specified `groupId`. Non-members receive an HTTP 403 Forbidden response.
-
-### Why is approval separate from payment?
-Separating approval from payment allows group members and owners to review proposals, check allocated budgets, and grant explicit consent before any payment order is generated or financial authorization occurs.
-
-### How is a webhook signature verified?
-Incoming webhooks include an `x-razorpay-signature` header. The server computes an HMAC SHA256 hash of the raw request body using `RAZORPAY_WEBHOOK_SECRET` and compares it with the received signature using `crypto.timingSafeEqual`.
-
-### What happens when a webhook is delivered twice?
-When a duplicate webhook arrives, the server checks if the `x-razorpay-event-id` is already stored in the `WebhookEvent` database table. If found, the server immediately returns `200 OK`, logs a `WEBHOOK_DUPLICATE` audit entry, and bypasses any state modification.
-
-### What happens when payment fails?
-If a payment fails or a `payment.failed` webhook event is received, the purchase state transitions to `FAILED`, the failure reason is recorded, and an audit trail log entry (`PAYMENT_FAILED`) is created.
-
-### How is purchase state updated?
-Purchase state is managed via explicit transactional transitions in PostgreSQL: `DRAFT` → `PENDING_APPROVAL` → `PENDING_PAYMENT` → `PAID` / `FAILED`.
-
-### What is recorded in the audit log?
-The `AuditLog` table records the timestamp, `purchaseId`, action type (`PURCHASE_CREATED`, `APPROVAL_GRANTED`, `PAYMENT_ORDER_CREATED`, `PAYMENT_CONFIRMED`, `WEBHOOK_RECEIVED`, `WEBHOOK_DUPLICATE`), performed-by user ID, and contextual JSON metadata.
-
-### What would need to change before live payments?
-1. Replace Razorpay Test Mode keys with production Live API keys (`RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`).
-2. Deploy the Express API to a public HTTPS domain with SSL certificates.
-3. Register the public HTTPS webhook URL on the Razorpay Dashboard.
-4. Implement production secret management (e.g., AWS Secrets Manager).
-
----
-
 ## Local Development Setup
 
 ### 1. Prerequisites
