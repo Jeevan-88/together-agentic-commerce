@@ -23,9 +23,5 @@ Thumbs.db
 *.local
 .vercel
 .env*
-*.mp4
-*.mov
-*.webm
-*.avi
-*.mkv
+!demo/together-demo.mp4
 
