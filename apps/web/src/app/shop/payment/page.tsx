@@ -361,56 +361,8 @@ function PaymentContent() {
 
               <p className="mt-3 text-sm leading-6 text-black/60">
                 Your purchase has been approved and validated. Click below to launch
-                the Razorpay Test Mode checkout modal, or speak &ldquo;Yes&rdquo; into your microphone.
+                the Razorpay Test Mode checkout modal.
               </p>
-
-              {/* Discreet Voice AI Control Bar (Audio Sound active, no clutter card) */}
-              <div className="my-4 flex items-center justify-between rounded-2xl border border-black/10 bg-white p-3.5 shadow-xs">
-                <div className="flex items-center gap-2.5">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-black/5 text-sm font-bold">
-                    🤖
-                  </span>
-                  <div className="text-left">
-                    <p className="text-xs font-bold text-slate-950">
-                      Voice AI Payment Assistant
-                    </p>
-                    <p className="text-[11px] text-black/50">
-                      {isListeningAi
-                        ? "Listening... Speak 'Yes' to pay or 'No' to cancel"
-                        : aiTranscript
-                          ? `Heard: "${aiTranscript}"`
-                          : "Hands-free voice payment active"}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={startAiVoiceListening}
-                    className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition shadow-xs ${
-                      isListeningAi
-                        ? "bg-red-600 text-white animate-pulse"
-                        : "border border-black/15 bg-slate-50 text-slate-900 hover:bg-black hover:text-white"
-                    }`}
-                    title="Toggle microphone"
-                  >
-                    <span>🎤</span> {isListeningAi ? "Listening..." : "Mic On"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={toggleMute}
-                    className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-bold transition shadow-xs ${
-                      isMuted
-                        ? "border-red-300 bg-red-50 text-red-700 hover:bg-red-100"
-                        : "border-black/15 bg-white text-slate-900 hover:bg-black hover:text-white"
-                    }`}
-                    title={isMuted ? "Unmute Audio" : "Mute Audio"}
-                  >
-                    {isMuted ? "🔇 Muted" : "🔊 Sound On"}
-                  </button>
-                </div>
-              </div>
 
               <div className="surface-inset my-6 rounded-2xl p-4 text-left">
                 <div className="flex items-center justify-between text-xs text-black/50">
