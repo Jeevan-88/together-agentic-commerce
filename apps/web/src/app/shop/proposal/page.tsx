@@ -1,41 +1,43 @@
-"use client";
+﻿"use client";
 
-import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import Header from "../../../components/Header";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+
+type Member = {
+  id: string;
+  name: string;
+  email: string;
+  role: "OWNER" | "MEMBER";
+};
 
 type Group = {
   id: string;
   name: string;
-  members?: Array<{
-    id: string;
-    role: string;
-    user: {
-      id: string;
-      name: string;
-      email: string;
-    };
-  }>;
+  members: Member[];
 };
 
 function ProposalContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const product = searchParams.get("product") || "Selected product";
-  const merchant = searchParams.get("merchant") || "Merchant";
-  const price = searchParams.get("price") || "₹0";
-  const request = searchParams.get("request") || "Your purchase request";
-  const mode = searchParams.get("mode") || "solo";
   const productId = searchParams.get("productId") || "";
-
-  const [approved, setApproved] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState("");
+  const product = searchParams.get("product") || "";
+  const merchant = searchParams.get("merchant") || "";
+  const price = searchParams.get("price") || "";
+  const request = searchParams.get("request") || "";
+  const mode = searchParams.get("mode") || "solo";
+  const incomingGroupId = searchParams.get("groupId") || "";
 
   const [groups, setGroups] = useState<Group[]>([]);
-  const [selectedGroupId, setSelectedGroupId] = useState("");
-  const [isLoadingGroups, setIsLoadingGroups] = useState(false);
+  const [selectedGroupId, setSelectedGroupId] = useState(incomingGroupId);
+  const [loadingGroups, setLoadingGroups] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [confirmed, setConfirmed] = useState(false);
 
   useEffect(() => {
     if (mode !== "group") {
@@ -43,52 +45,40 @@ function ProposalContent() {
     }
 
     async function loadGroups() {
-      setIsLoadingGroups(true);
-      setError("");
-
       try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/groups/demo/current`,
-        );
+        setLoadingGroups(true);
+        setError("");
 
+        const response = await fetch(`${API_URL}/api/groups/demo/current`);
         const data = await response.json();
 
-        if (!response.ok || !data.success) {
-          throw new Error(data.message || "Failed to load groups");
+        if (!response.ok) {
+          throw new Error(data.message || "Unable to load groups");
         }
 
-        const availableGroups = Array.isArray(data.groups)
-          ? data.groups
-          : [];
+        const loadedGroups: Group[] = data.groups || [];
+        setGroups(loadedGroups);
 
-        setGroups(availableGroups);
-
-        if (availableGroups.length > 0) {
-          setSelectedGroupId(availableGroups[0].id);
+        if (incomingGroupId && loadedGroups.some((g) => g.id === incomingGroupId)) {
+          setSelectedGroupId(incomingGroupId);
+        } else if (loadedGroups.length > 0) {
+          setSelectedGroupId(loadedGroups[0].id);
         }
       } catch (err) {
-        console.error("Failed to load groups:", err);
-
         setError(
-          err instanceof Error
-            ? err.message
-            : "Failed to load your groups.",
+          err instanceof Error ? err.message : "Unable to load groups",
         );
       } finally {
-        setIsLoadingGroups(false);
+        setLoadingGroups(false);
       }
     }
 
     loadGroups();
-  }, [mode]);
+  }, [mode, incomingGroupId]);
 
-  async function handleContinue() {
-    if (!approved || isSubmitting) {
-      return;
-    }
-
-    if (!productId) {
-      setError("Product information is missing. Please start again.");
+  async function createAndApprovePurchase() {
+    if (!productId || !request) {
+      setError("Product or request information is missing.");
       return;
     }
 
@@ -97,46 +87,48 @@ function ProposalContent() {
       return;
     }
 
-    setIsSubmitting(true);
-    setError("");
-
     try {
-      const createResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/purchases`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            productId,
-            requestText: request,
-            mode,
-            ...(mode === "group"
-              ? {
-                  groupId: selectedGroupId,
-                }
-              : {}),
-          }),
-        },
-      );
+      setSubmitting(true);
+      setError("");
 
-      const createData = await createResponse.json();
+      const purchasePayload: {
+        productId: string;
+        requestText: string;
+        mode: string;
+        groupId?: string;
+      } = {
+        productId,
+        requestText: request,
+        mode,
+      };
 
-      if (!createResponse.ok || !createData.success) {
-        throw new Error(
-          createData.message || "Failed to create purchase",
-        );
+      if (mode === "group") {
+        purchasePayload.groupId = selectedGroupId;
       }
 
-      const purchaseId = createData.purchase?.id;
+      const purchaseResponse = await fetch(`${API_URL}/api/purchases`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(purchasePayload),
+      });
+
+      const purchaseData = await purchaseResponse.json();
+
+      if (!purchaseResponse.ok) {
+        throw new Error(purchaseData.message || "Unable to create purchase");
+      }
+
+      const purchaseId = purchaseData.purchase?.id;
 
       if (!purchaseId) {
-        throw new Error("Purchase ID was not returned by the server");
+        throw new Error("Purchase ID was not returned.");
       }
 
+      // Transition from DRAFT to PENDING_PAYMENT via approval
       const approveResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/purchases/${purchaseId}/approve`,
+        `${API_URL}/api/purchases/${purchaseId}/approve`,
         {
           method: "POST",
           headers: {
@@ -147,312 +139,221 @@ function ProposalContent() {
 
       const approveData = await approveResponse.json();
 
-      if (!approveResponse.ok || !approveData.success) {
-        throw new Error(
-          approveData.message || "Failed to approve purchase",
-        );
+      if (!approveResponse.ok) {
+        throw new Error(approveData.message || "Unable to approve purchase");
       }
 
-      const params = new URLSearchParams({
-        product,
-        merchant,
-        price,
-        request,
-        mode,
-        productId,
-        purchaseId,
-      });
-
-      if (mode === "group") {
-        params.set("groupId", selectedGroupId);
-      }
-
-      router.push(`/shop/payment?${params.toString()}`);
+      router.push(`/shop/payment?purchaseId=${encodeURIComponent(purchaseId)}`);
     } catch (err) {
-      console.error("Purchase flow failed:", err);
-
       setError(
-        err instanceof Error
-          ? err.message
-          : "Something went wrong. Please try again.",
+        err instanceof Error ? err.message : "Unable to complete proposal",
       );
-
-      setIsSubmitting(false);
+    } finally {
+      setSubmitting(false);
     }
   }
 
+  const selectedGroup = groups.find((g) => g.id === selectedGroupId);
+
   return (
     <main className="min-h-screen bg-[#f7f7f5] text-[#171717]">
-      <div className="mx-auto min-h-screen max-w-5xl px-6 py-8 sm:px-10">
-        <header className="flex items-center justify-between border-b border-black/10 pb-5">
-          <Link
-            href="/"
-            className="flex items-center gap-3"
-            aria-label="Go to TOGETHER home"
-          >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-black text-sm font-semibold text-white">
-              T
-            </div>
+      <div className="mx-auto flex min-h-screen max-w-4xl flex-col px-6 py-6 sm:px-10">
+        <Header currentStep="Review & Approve" />
 
-            <span className="text-lg font-semibold tracking-tight">
-              TOGETHER
-            </span>
-          </Link>
+        <div className="py-10">
+          <div className="mb-8">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="text-xs font-semibold uppercase tracking-wider text-black/50 transition hover:text-black"
+            >
+              Back to Options
+            </button>
 
-          <Link
-            href="/shop/results"
-            className="text-sm text-black/50 transition hover:text-black"
-          >
-            Back to options
-          </Link>
-        </header>
-
-        <section className="mx-auto max-w-3xl py-14">
-          <div className="mb-10">
-            <p className="mb-3 text-sm font-medium uppercase tracking-[0.2em] text-black/45">
-              Review
-            </p>
-
-            <h1 className="text-4xl font-semibold tracking-[-0.03em] sm:text-5xl">
-              Here is the purchase we are proposing.
+            <h1 className="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl">
+              Purchase proposal
             </h1>
 
-            <p className="mt-4 max-w-2xl text-base leading-7 text-black/60 sm:text-lg">
-              Check the details carefully before approving the purchase.
+            <p className="mt-3 max-w-2xl text-base text-black/60">
+              Review your product selection and group allocation before continuing
+              to Razorpay test checkout.
             </p>
           </div>
 
-          <div className="overflow-hidden rounded-3xl border border-black/10 bg-white shadow-sm">
-            <div className="border-b border-black/10 p-6 sm:p-8">
-              <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+          {error && (
+            <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
+              {error}
+            </div>
+          )}
+
+          {/* Product Summary Card */}
+          <section className="surface-card rounded-3xl p-6 sm:p-7">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-black/45">
+                  {merchant || "Merchant"}
+                </span>
+
+                <h2 className="mt-1 text-2xl font-semibold text-slate-950">
+                  {product || "Selected Product"}
+                </h2>
+
+                <p className="mt-2 text-xs font-medium uppercase tracking-wide text-black/50">
+                  {mode === "group" ? "Group Purchase" : "Solo Purchase"}
+                </p>
+              </div>
+
+              <div className="sm:text-right">
+                <span className="text-xs text-black/40">Total Amount</span>
+                <p className="mt-0.5 text-3xl font-semibold text-slate-950">
+                  {price || "₹0"}
+                </p>
+              </div>
+            </div>
+
+            <div className="surface-inset mt-6 rounded-2xl p-4">
+              <span className="text-xs font-semibold uppercase tracking-wider text-black/50">
+                Original Request
+              </span>
+              <p className="mt-1.5 text-sm leading-6 text-black/75">
+                {request || "No request text provided"}
+              </p>
+            </div>
+          </section>
+
+          {/* Group Details Card if Group Mode */}
+          {mode === "group" && (
+            <section className="surface-card mt-6 rounded-3xl p-6 sm:p-7">
+              <div className="mb-5 flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-black/40">
-                    {merchant}
-                  </p>
-
-                  <h2 className="mt-2 text-2xl font-semibold tracking-tight">
-                    {product}
-                  </h2>
-
-                  <p className="mt-2 text-sm text-black/50">
-                    {mode === "group"
-                      ? "Group purchase"
-                      : "Solo purchase"}
-                  </p>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-black/45">
+                    Collaboration
+                  </span>
+                  <h2 className="mt-1 text-xl font-semibold">Shopping group</h2>
                 </div>
 
-                <div className="sm:text-right">
-                  <p className="text-xs text-black/40">Total</p>
-
-                  <p className="mt-1 text-3xl font-semibold tracking-tight">
-                    {price}
-                  </p>
-                </div>
+                <Link
+                  href="/group"
+                  className="text-xs font-semibold text-black underline-offset-4 hover:underline"
+                >
+                  Manage groups
+                </Link>
               </div>
-            </div>
 
-            <div className="border-b border-black/10 p-6 sm:p-8">
-              <p className="text-xs font-medium uppercase tracking-wide text-black/40">
-                Your request
-              </p>
-
-              <div className="mt-4 rounded-2xl bg-[#f5f5f3] p-5">
-                <p className="text-sm leading-7 text-black/65">
-                  {request}
-                </p>
-              </div>
-            </div>
-
-            <div className="border-b border-black/10 p-6 sm:p-8">
-              <p className="text-xs font-medium uppercase tracking-wide text-black/40">
-                Purchase details
-              </p>
-
-              <div className="mt-6 space-y-4">
-                <div className="flex items-center justify-between border-b border-black/5 pb-4">
-                  <span className="text-sm text-black/50">
-                    Product
-                  </span>
-
-                  <span className="text-sm font-medium">
-                    {product}
-                  </span>
+              {loadingGroups ? (
+                <div className="surface-inset rounded-2xl p-6 text-center text-sm text-black/50">
+                  Loading groups...
                 </div>
-
-                <div className="flex items-center justify-between border-b border-black/5 pb-4">
-                  <span className="text-sm text-black/50">
-                    Merchant
-                  </span>
-
-                  <span className="text-sm font-medium">
-                    {merchant}
-                  </span>
+              ) : groups.length === 0 ? (
+                <div className="surface-inset rounded-2xl p-6 text-center">
+                  <p className="font-semibold">No active group found</p>
+                  <p className="mt-1 text-xs text-black/50">
+                    Create a group first to proceed with a group purchase.
+                  </p>
+                  <Link
+                    href="/group"
+                    className="mt-4 inline-block rounded-xl bg-black px-4 py-2 text-xs font-semibold text-white"
+                  >
+                    Create a group
+                  </Link>
                 </div>
-
-                <div className="flex items-center justify-between border-b border-black/5 pb-4">
-                  <span className="text-sm text-black/50">
-                    Purchase type
-                  </span>
-
-                  <span className="text-sm font-medium">
-                    {mode === "group" ? "Group" : "Solo"}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-black/50">
-                    Total
-                  </span>
-
-                  <span className="text-lg font-semibold">
-                    {price}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {mode === "group" && (
-              <div className="border-b border-black/10 bg-[#fafaf8] p-6 sm:p-8">
-                <p className="text-xs font-medium uppercase tracking-wide text-black/40">
-                  Group
-                </p>
-
-                <h3 className="mt-2 text-lg font-semibold">
-                  Choose who this purchase belongs to
-                </h3>
-
-                <p className="mt-2 text-sm leading-6 text-black/50">
-                  The purchase will be linked to the selected group.
-                </p>
-
-                {isLoadingGroups ? (
-                  <div className="mt-5 rounded-2xl border border-black/10 bg-white p-5">
-                    <p className="text-sm text-black/50">
-                      Loading your groups...
-                    </p>
-                  </div>
-                ) : groups.length > 0 ? (
-                  <div className="mt-5 space-y-3">
-                    {groups.map((group) => (
+              ) : (
+                <div className="space-y-3">
+                  {groups.map((group) => {
+                    const isSelected = selectedGroupId === group.id;
+                    return (
                       <label
                         key={group.id}
-                        className={`flex cursor-pointer items-center gap-4 rounded-2xl border p-5 transition ${
-                          selectedGroupId === group.id
-                            ? "border-black bg-white"
+                        className={`flex cursor-pointer items-center justify-between rounded-2xl border p-4 transition ${
+                          isSelected
+                            ? "border-black bg-black text-white shadow-sm ring-1 ring-black"
                             : "border-black/10 bg-white hover:border-black/25"
                         }`}
                       >
+                        <div>
+                          <p className="font-semibold">{group.name}</p>
+                          <p
+                            className={`mt-1 text-xs ${
+                              isSelected ? "text-white/70" : "text-black/50"
+                            }`}
+                          >
+                            {group.members.length}{" "}
+                            {group.members.length === 1 ? "member" : "members"}
+                          </p>
+                        </div>
+
                         <input
                           type="radio"
-                          name="group"
+                          name="selectedGroup"
                           value={group.id}
-                          checked={selectedGroupId === group.id}
-                          disabled={isSubmitting}
-                          onChange={(event) =>
-                            setSelectedGroupId(event.target.value)
-                          }
-                          className="h-5 w-5 accent-black"
+                          checked={isSelected}
+                          onChange={() => setSelectedGroupId(group.id)}
+                          className="h-4 w-4 accent-black"
                         />
-
-                        <span className="min-w-0">
-                          <span className="block text-sm font-medium">
-                            {group.name}
-                          </span>
-
-                          <span className="mt-1 block text-xs text-black/45">
-                            {group.members?.length ?? 0} member
-                            {(group.members?.length ?? 0) === 1
-                              ? ""
-                              : "s"}
-                          </span>
-                        </span>
                       </label>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-5">
-                    <p className="text-sm font-medium text-amber-900">
-                      No group is available yet.
-                    </p>
+                    );
+                  })}
 
-                    <p className="mt-1 text-sm leading-6 text-amber-800">
-                      Create a group before starting a group purchase.
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className="bg-[#fafaf8] p-6 sm:p-8">
-              <label className="flex cursor-pointer gap-4">
-                <input
-                  type="checkbox"
-                  checked={approved}
-                  disabled={
-                    isSubmitting ||
-                    (mode === "group" &&
-                      (!selectedGroupId || isLoadingGroups))
-                  }
-                  onChange={(event) =>
-                    setApproved(event.target.checked)
-                  }
-                  className="mt-1 h-5 w-5 shrink-0 accent-black"
-                />
-
-                <span>
-                  <span className="block text-sm font-medium">
-                    I approve this purchase
-                  </span>
-
-                  <span className="mt-1 block text-sm leading-6 text-black/50">
-                    I have reviewed the product, merchant, purchase
-                    type and total amount. I want to continue to
-                    payment.
-                  </span>
-                </span>
-              </label>
-
-              {error && (
-                <div
-                  role="alert"
-                  className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-700"
-                >
-                  {error}
+                  {selectedGroup && (
+                    <div className="surface-inset mt-4 rounded-2xl p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-black/50">
+                        Members involved
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {selectedGroup.members.map((member) => (
+                          <span
+                            key={member.id}
+                            className="rounded-full border border-black/10 bg-white px-3 py-1 text-xs font-medium text-black/75"
+                          >
+                            {member.name} {member.role === "OWNER" && "(Owner)"}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
+            </section>
+          )}
+
+          {/* Review & Consent Block */}
+          <div className="surface-card mt-6 rounded-3xl p-6 sm:p-7">
+            <label className="flex cursor-pointer items-start gap-3">
+              <input
+                type="checkbox"
+                checked={confirmed}
+                onChange={(e) => setConfirmed(e.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-black/20 accent-black focus:ring-black"
+              />
+              <span className="text-sm leading-6 text-black/75">
+                <strong className="text-black">Confirm purchase details:</strong> I have
+                reviewed the product, pricing, and {mode === "group" ? "group consensus" : "purchase terms"}.
+                Proceeding will open Razorpay Test Mode checkout.
+              </span>
+            </label>
+
+            <div className="mt-6 flex flex-col gap-4 border-t border-black/10 pt-6 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-xs text-black/45">
+                {confirmed
+                  ? "Ready to initiate payment"
+                  : "Please check the confirmation box above"}
+              </p>
 
               <button
                 type="button"
+                onClick={createAndApprovePurchase}
                 disabled={
-                  !approved ||
-                  isSubmitting ||
-                  (mode === "group" && !selectedGroupId)
+                  submitting ||
+                  !confirmed ||
+                  (mode === "group" && (!selectedGroupId || groups.length === 0))
                 }
-                onClick={handleContinue}
-                className="mt-6 w-full rounded-xl bg-black py-4 text-sm font-medium text-white transition hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-black/20"
+                className="rounded-xl bg-black px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-black/80 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                {isSubmitting
-                  ? "Preparing purchase..."
-                  : "Continue to payment"}
+                {submitting ? "Preparing order..." : "Approve and continue &rarr;"}
               </button>
-
-              {!approved && !isSubmitting && (
-                <p className="mt-4 text-center text-xs text-black/40">
-                  Approval is required before continuing.
-                </p>
-              )}
             </div>
           </div>
-
-          <div className="mt-6">
-            <Link
-              href="/shop"
-              className="block text-center text-sm font-medium text-black/45 transition hover:text-black"
-            >
-              Start a new purchase
-            </Link>
-          </div>
-        </section>
+        </div>
       </div>
     </main>
   );
@@ -463,10 +364,8 @@ export default function ProposalPage() {
     <Suspense
       fallback={
         <main className="min-h-screen bg-[#f7f7f5] text-[#171717]">
-          <div className="mx-auto flex min-h-screen max-w-6xl items-center justify-center px-6">
-            <p className="text-sm text-black/50">
-              Loading proposal...
-            </p>
+          <div className="mx-auto flex min-h-screen max-w-4xl items-center justify-center px-6">
+            <p className="text-sm text-black/50">Loading proposal...</p>
           </div>
         </main>
       }
