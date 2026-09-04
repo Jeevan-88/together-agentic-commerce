@@ -206,7 +206,7 @@ function ResultsContent() {
 
                 {recommendation && (
                   <div className="flex items-center gap-2 text-xs">
-                    <span className="rounded-full bg-emerald-50 px-3.5 py-1 font-bold text-emerald-800 border border-emerald-200 shadow-sm">
+                    <span className="oval-pill-btn border-black/20 bg-white text-slate-900 text-[11px] font-bold shadow-sm">
                       Top Match: {recommendation.score}% Match
                     </span>
                   </div>
@@ -362,7 +362,7 @@ function ResultsContent() {
                               ₹{(originalPricePaise / 100).toLocaleString("en-IN")}
                             </span>
                           )}
-                          <span className="text-[11px] font-semibold text-emerald-700">
+                          <span className="text-[11px] font-semibold text-black/50">
                             Test Checkout
                           </span>
                         </div>
