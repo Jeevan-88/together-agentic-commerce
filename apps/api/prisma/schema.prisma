@@ -1,0 +1,221 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+enum PurchaseMode {
+  SOLO
+  GROUP
+}
+
+enum PurchaseStatus {
+  DRAFT
+  PENDING_PAYMENT
+  PAYMENT_PROCESSING
+  PAID
+  FAILED
+  CANCELLED
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+enum PaymentStatus {
+  CREATED
+  AUTHORIZED
+  CAPTURED
+  FAILED
+  REFUNDED
+}
+
+enum GroupMemberRole {
+  OWNER
+  MEMBER
+}
+
+enum AuditAction {
+  PURCHASE_CREATED
+  PURCHASE_VALIDATED
+  APPROVAL_CREATED
+  APPROVAL_GRANTED
+  PAYMENT_ORDER_CREATED
+  PAYMENT_CONFIRMED
+  PAYMENT_FAILED
+  WEBHOOK_RECEIVED
+  WEBHOOK_DUPLICATE
+  PURCHASE_CANCELLED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  groups          GroupMember[]
+  purchases       Purchase[]
+  createdGroups   Group[] @relation("GroupCreator")
+}
+
+model Group {
+  id        String   @id @default(uuid())
+  name      String
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members   GroupMember[]
+  purchases Purchase[]
+
+  creator User @relation("GroupCreator", fields: [createdBy], references: [id])
+}
+
+model GroupMember {
+  id        String          @id @default(uuid())
+  groupId   String
+  userId    String
+  role      GroupMemberRole @default(MEMBER)
+  joinedAt  DateTime        @default(now())
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@index([userId])
+}
+
+model Merchant {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products Product[]
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  merchantId  String
+  name        String
+  description String?
+  pricePaise  Int
+  currency    String   @default("INR")
+  active      Boolean  @default(true)
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Restrict)
+  items    PurchaseItem[]
+
+  @@index([merchantId])
+}
+
+model Purchase {
+  id             String         @id @default(uuid())
+  userId         String
+  groupId        String?
+  mode           PurchaseMode
+  status         PurchaseStatus @default(DRAFT)
+  totalPaise     Int
+  currency       String         @default("INR")
+  requestText    String
+  approvedAt     DateTime?
+  paidAt         DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  user      User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  group     Group?       @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  items     PurchaseItem[]
+  approval  Approval?
+  payment   Payment?
+  auditLogs AuditLog[]
+
+  @@index([userId])
+  @@index([groupId])
+  @@index([status])
+}
+
+model PurchaseItem {
+  id             String   @id @default(uuid())
+  purchaseId     String
+  productId      String
+  productName    String
+  merchantName   String
+  unitPricePaise Int
+  quantity       Int
+  createdAt      DateTime @default(now())
+
+  purchase Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([purchaseId])
+  @@index([productId])
+}
+
+model Approval {
+  id         String         @id @default(uuid())
+  purchaseId String         @unique
+  status     ApprovalStatus @default(PENDING)
+  approvedBy String?
+  approvedAt DateTime?
+  expiresAt  DateTime?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  purchase Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+}
+
+model Payment {
+  id                String        @id @default(uuid())
+  purchaseId        String        @unique
+  status            PaymentStatus @default(CREATED)
+  amountPaise       Int
+  currency          String        @default("INR")
+  razorpayOrderId   String?       @unique
+  razorpayPaymentId String?       @unique
+  capturedAt        DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  purchase Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+}
+
+model WebhookEvent {
+  id          String   @id @default(uuid())
+  eventId     String   @unique
+  eventType   String
+  payloadHash String?
+  receivedAt  DateTime @default(now())
+  processedAt DateTime?
+  createdAt   DateTime @default(now())
+}
+
+model AuditLog {
+  id         String      @id @default(uuid())
+  purchaseId String?
+  action     AuditAction
+  actorId    String?
+  details    Json?
+  createdAt  DateTime    @default(now())
+
+  purchase Purchase? @relation(fields: [purchaseId], references: [id], onDelete: SetNull)
+
+  @@index([purchaseId])
+  @@index([action])
+  @@index([createdAt])
+}

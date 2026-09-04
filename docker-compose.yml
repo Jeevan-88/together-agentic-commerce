@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: together-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: together
+      POSTGRES_USER: together
+      POSTGRES_PASSWORD: together_dev_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - together-postgres-data:/var/lib/postgresql/data
+
+volumes:
+  together-postgres-data:
