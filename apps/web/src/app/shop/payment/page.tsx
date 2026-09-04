@@ -1,8 +1,10 @@
-"use client";
+﻿"use client";
 
 import Script from "next/script";
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import Header from "../../../components/Header";
 
 declare global {
   interface Window {
@@ -44,7 +46,7 @@ function PaymentContent() {
     }
 
     if (!window.Razorpay) {
-      setError("Payment checkout is still loading. Please try again.");
+      setError("Payment checkout is still loading. Please wait a moment and try again.");
       return;
     }
 
@@ -53,7 +55,7 @@ function PaymentContent() {
     setError("");
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
       const orderResponse = await fetch(
         `${apiUrl}/api/purchases/${purchaseId}/payment-order`,
@@ -74,16 +76,16 @@ function PaymentContent() {
       }
 
       const checkout = new window.Razorpay({
-  key: orderData.payment.keyId,
-  amount: orderData.payment.amountPaise,
-  currency: orderData.payment.currency,
-  name: "TOGETHER",
+        key: orderData.payment.keyId,
+        amount: orderData.payment.amountPaise,
+        currency: orderData.payment.currency,
+        name: "TOGETHER",
         description: "Purchase through TOGETHER",
         order_id: orderData.orderId,
 
         handler: async (response) => {
           try {
-            setMessage("Verifying payment...");
+            setMessage("Verifying payment with Razorpay...");
             setError("");
 
             const verifyResponse = await fetch(
@@ -94,12 +96,9 @@ function PaymentContent() {
                   "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                  razorpayPaymentId:
-                    response.razorpay_payment_id,
-                  razorpayOrderId:
-                    response.razorpay_order_id,
-                  razorpaySignature:
-                    response.razorpay_signature,
+                  razorpayPaymentId: response.razorpay_payment_id,
+                  razorpayOrderId: response.razorpay_order_id,
+                  razorpaySignature: response.razorpay_signature,
                 }),
               },
             );
@@ -108,27 +107,21 @@ function PaymentContent() {
 
             if (!verifyResponse.ok || !verifyData.success) {
               throw new Error(
-                verifyData.message ||
-                  "Payment verification failed.",
+                verifyData.message || "Payment verification failed.",
               );
             }
 
             router.push(
-              `/shop/status?purchaseId=${encodeURIComponent(
-                purchaseId,
-              )}`,
+              `/shop/status?purchaseId=${encodeURIComponent(purchaseId)}`,
             );
           } catch (err) {
             console.error("Payment verification failed:", err);
-
             setMessage("");
-
             setError(
               err instanceof Error
                 ? err.message
                 : "Payment verification failed.",
             );
-
             setIsLoading(false);
           }
         },
@@ -144,13 +137,9 @@ function PaymentContent() {
       checkout.open();
     } catch (err) {
       console.error("Payment initialization failed:", err);
-
       setError(
-        err instanceof Error
-          ? err.message
-          : "Unable to start payment.",
+        err instanceof Error ? err.message : "Unable to start payment.",
       );
-
       setIsLoading(false);
     }
   }
@@ -159,14 +148,17 @@ function PaymentContent() {
     return (
       <main className="min-h-screen bg-[#f7f7f5] text-[#171717]">
         <div className="mx-auto flex min-h-screen max-w-lg items-center justify-center px-6">
-          <div className="w-full rounded-3xl border border-black/10 bg-white p-8 text-center shadow-sm">
-            <h1 className="text-2xl font-semibold">
-              Purchase ID missing
-            </h1>
-
-            <p className="mt-3 text-sm text-black/50">
-              We could not identify the purchase to continue.
+          <div className="surface-card w-full rounded-3xl p-8 text-center">
+            <h1 className="text-2xl font-semibold">Purchase not identified</h1>
+            <p className="mt-2 text-sm text-black/50">
+              A valid purchase identifier was not provided.
             </p>
+            <Link
+              href="/shop"
+              className="mt-6 inline-block rounded-xl bg-black px-5 py-3 text-sm font-semibold text-white"
+            >
+              Start a new purchase
+            </Link>
           </div>
         </div>
       </main>
@@ -181,58 +173,70 @@ function PaymentContent() {
       />
 
       <main className="min-h-screen bg-[#f7f7f5] text-[#171717]">
-        <div className="mx-auto min-h-screen max-w-4xl px-6 py-8 sm:px-10">
-          <header className="border-b border-black/10 pb-5">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-black text-sm font-semibold text-white">
-                T
+        <div className="mx-auto flex min-h-screen max-w-4xl flex-col px-6 py-6 sm:px-10">
+          <Header currentStep="Checkout" />
+
+          <section className="mx-auto w-full max-w-xl py-14 text-center sm:py-20">
+            <div className="surface-card rounded-3xl p-8 shadow-sm sm:p-10">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-black text-white shadow-sm">
+                <span className="text-lg font-bold">₹</span>
               </div>
 
-              <span className="text-lg font-semibold tracking-tight">
-                TOGETHER
+              <span className="mt-5 inline-block text-xs font-semibold uppercase tracking-[0.18em] text-black/45">
+                Razorpay Checkout
               </span>
-            </div>
-          </header>
 
-          <section className="mx-auto max-w-xl py-20 text-center">
-            <p className="text-sm font-medium uppercase tracking-[0.2em] text-black/40">
-              Secure checkout
-            </p>
+              <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
+                Complete your payment
+              </h1>
 
-            <h1 className="mt-4 text-4xl font-semibold tracking-[-0.03em]">
-              Complete your purchase
-            </h1>
-
-            <p className="mt-4 text-base leading-7 text-black/55">
-              Your purchase has been approved. Continue to Razorpay
-              Test Mode to complete the payment.
-            </p>
-
-            <button
-              type="button"
-              onClick={startPayment}
-              disabled={isLoading}
-              className="mt-10 w-full rounded-2xl bg-black px-6 py-4 text-sm font-semibold text-white transition hover:bg-black/85 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {isLoading ? "Opening checkout..." : "Pay securely"}
-            </button>
-
-            {message && (
-              <p className="mt-5 text-sm text-black/55">
-                {message}
+              <p className="mt-3 text-sm leading-6 text-black/60">
+                Your purchase has been approved and validated. Click below to launch
+                the Razorpay Test Mode checkout.
               </p>
-            )}
 
-            {error && (
-              <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                {error}
+              <div className="surface-inset my-6 rounded-2xl p-4 text-left">
+                <div className="flex items-center justify-between text-xs text-black/50">
+                  <span>Reference ID</span>
+                  <span className="font-mono text-black/75">{purchaseId.slice(0, 18)}...</span>
+                </div>
+                <div className="mt-2 flex items-center justify-between text-xs text-black/50">
+                  <span>Payment Gateway</span>
+                  <span className="font-semibold text-black">Razorpay Standard</span>
+                </div>
+                <div className="mt-2 flex items-center justify-between text-xs text-black/50">
+                  <span>Environment</span>
+                  <span className="rounded bg-black/5 px-2 py-0.5 text-[10px] font-semibold uppercase text-black/70">
+                    Test Mode
+                  </span>
+                </div>
               </div>
-            )}
 
-            <p className="mt-8 text-xs leading-5 text-black/35">
-              This demo uses Razorpay Test Mode. No real money is
-              charged.
-            </p>
+              <button
+                type="button"
+                onClick={startPayment}
+                disabled={isLoading}
+                className="w-full rounded-xl bg-black py-4 text-sm font-semibold text-white shadow-sm transition hover:bg-black/80 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isLoading ? "Opening Razorpay checkout..." : "Pay securely with Razorpay"}
+              </button>
+
+              {message && (
+                <div className="mt-4 rounded-xl border border-sky-200 bg-sky-50 p-3 text-xs font-medium text-sky-800">
+                  {message}
+                </div>
+              )}
+
+              {error && (
+                <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-700">
+                  {error}
+                </div>
+              )}
+
+              <p className="mt-6 text-[11px] text-black/40">
+                Test Mode: Use simulated card or UPI in the Razorpay modal. No real funds are debited.
+              </p>
+            </div>
           </section>
         </div>
       </main>
@@ -245,10 +249,8 @@ export default function PaymentPage() {
     <Suspense
       fallback={
         <main className="min-h-screen bg-[#f7f7f5] text-[#171717]">
-          <div className="flex min-h-screen items-center justify-center">
-            <p className="text-sm text-black/50">
-              Loading payment...
-            </p>
+          <div className="mx-auto flex min-h-screen max-w-4xl items-center justify-center px-6">
+            <p className="text-sm text-black/50">Loading checkout...</p>
           </div>
         </main>
       }
