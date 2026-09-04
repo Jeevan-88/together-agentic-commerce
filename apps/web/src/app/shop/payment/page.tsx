@@ -48,10 +48,26 @@ function PaymentContent() {
   const [aiState, setAiState] = useState<"IDLE" | "PROMPTING" | "CONFIRMED" | "CANCELLED">("IDLE");
   const [aiTranscript, setAiTranscript] = useState("");
   const [isListeningAi, setIsListeningAi] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+
+  useEffect(() => {
+    const storedMute = localStorage.getItem("together_voice_muted") === "true";
+    if (storedMute) setIsMuted(true);
+  }, []);
+
+  function toggleMute() {
+    const nextMute = !isMuted;
+    setIsMuted(nextMute);
+    localStorage.setItem("together_voice_muted", String(nextMute));
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+  }
 
   function speakText(text: string) {
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
+      if (isMuted) return;
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.rate = 0.95;
       utterance.pitch = 1.0;
@@ -383,20 +399,15 @@ function PaymentContent() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      if (purchaseDetails) {
-                        const amountStr = purchaseDetails.totalPaise
-                          ? `₹${(purchaseDetails.totalPaise / 100).toLocaleString("en-IN")}`
-                          : "the requested amount";
-                        speakText(
-                          `Hello! Would you like me to process the payment of ${amountStr} for ${purchaseDetails.productName || "your item"} automatically? Say 'Yes' to approve or 'No' to cancel.`,
-                        );
-                      }
-                    }}
-                    className="flex items-center gap-1 rounded-full border border-black/15 bg-white px-2.5 py-1 text-xs font-bold text-slate-900 transition hover:bg-black hover:text-white shadow-xs"
-                    title="Replay Audio Voice Prompt"
+                    onClick={toggleMute}
+                    className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-bold transition shadow-xs ${
+                      isMuted
+                        ? "border-red-300 bg-red-50 text-red-700 hover:bg-red-100"
+                        : "border-black/15 bg-white text-slate-900 hover:bg-black hover:text-white"
+                    }`}
+                    title={isMuted ? "Unmute Audio" : "Mute Audio"}
                   >
-                    🔊 Speaker
+                    {isMuted ? "🔇 Muted" : "🔊 Sound On"}
                   </button>
                 </div>
               </div>

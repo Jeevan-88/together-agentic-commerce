@@ -305,10 +305,27 @@ function ResultsContent() {
   // Voice Speech Assistant for results page
   const [hasSpoken, setHasSpoken] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+
+  useEffect(() => {
+    const storedMute = localStorage.getItem("together_voice_muted") === "true";
+    if (storedMute) setIsMuted(true);
+  }, []);
+
+  function toggleMute() {
+    const nextMute = !isMuted;
+    setIsMuted(nextMute);
+    localStorage.setItem("together_voice_muted", String(nextMute));
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+    }
+  }
 
   function speakResultsSummary(productName?: string, priceStr?: string) {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
     window.speechSynthesis.cancel();
+    if (isMuted) return;
     const text = productName
       ? `I evaluated your request for ${request}. The top recommendation is ${productName} for ${priceStr}. Click any item to select it.`
       : `Here are the top catalog results for ${request}. Click any item to continue.`;
@@ -392,24 +409,18 @@ function ResultsContent() {
                     </span>
                   )}
 
-                  {/* Interactive Voice Assistant Button */}
+                  {/* Interactive Mute / Unmute & Voice Assistant Buttons */}
                   <button
                     type="button"
-                    onClick={() => {
-                      const topItem = recommendation?.product || paginatedProducts[0];
-                      if (topItem) {
-                        const priceStr = `₹${(topItem.pricePaise / 100).toLocaleString("en-IN")}`;
-                        speakResultsSummary(topItem.name, priceStr);
-                      }
-                    }}
-                    className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition shadow-sm ${
-                      isSpeaking
-                        ? "bg-red-600 text-white animate-pulse ring-2 ring-red-300"
+                    onClick={toggleMute}
+                    className={`flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold transition shadow-sm ${
+                      isMuted
+                        ? "border border-red-300 bg-red-50 text-red-700 hover:bg-red-100"
                         : "border border-black/20 bg-white text-slate-900 hover:bg-black hover:text-white"
                     }`}
-                    title="Listen to AI Voice Assistant"
+                    title={isMuted ? "Unmute Voice AI" : "Mute Voice AI"}
                   >
-                    <span className="text-sm">🔊</span> {isSpeaking ? "AI Speaking..." : "Listen AI Voice"}
+                    {isMuted ? "🔇 Muted" : "🔊 Sound On"}
                   </button>
                 </div>
               </div>
