@@ -187,27 +187,26 @@ function ResultsContent() {
             </div>
           </div>
 
-          {/* Active Query Banner if request exists */}
+          {/* Active Query Banner with Monochrome Gradient & Splitting Black Circle Animation */}
           {request && (
-            <div className="gemini-rainbow-card mb-8">
-              <div className="gemini-rainbow-inner flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-50 text-blue-600 text-xs font-bold">
-                    AI
+            <div className="gemini-monochrome-card relative mb-8 overflow-hidden">
+              {/* Splitting Black Circles */}
+              <span className="animate-split-left absolute top-1/2 h-3.5 w-3.5 rounded-full bg-black shadow-md z-20 pointer-events-none" />
+              <span className="animate-split-right absolute top-1/2 h-3.5 w-3.5 rounded-full bg-black shadow-md z-20 pointer-events-none" />
+
+              <div className="gemini-rainbow-inner relative z-10 flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+                <div>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-black/40">
+                    Evaluated Intent
                   </span>
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-black/40">
-                      Evaluated Intent
-                    </span>
-                    <p className="text-sm font-semibold text-slate-950">
-                      &ldquo;{request}&rdquo;
-                    </p>
-                  </div>
+                  <p className="text-sm font-bold text-slate-950">
+                    &ldquo;{request}&rdquo;
+                  </p>
                 </div>
 
                 {recommendation && (
                   <div className="flex items-center gap-2 text-xs">
-                    <span className="rounded-full bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-800 border border-emerald-200">
+                    <span className="rounded-full bg-emerald-50 px-3 py-1 font-bold text-emerald-800 border border-emerald-200 shadow-sm">
                       Top Match: {recommendation.score}% Match
                     </span>
                   </div>
