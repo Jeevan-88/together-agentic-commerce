@@ -1,4 +1,3 @@
-@"
 node_modules/
 .next/
 dist/
@@ -7,6 +6,7 @@ coverage/
 
 .env
 .env.*
+.env.local
 !.env.example
 
 *.log
@@ -21,4 +21,3 @@ Thumbs.db
 .idea/
 
 *.local
-"@ | Set-Content .gitignore
