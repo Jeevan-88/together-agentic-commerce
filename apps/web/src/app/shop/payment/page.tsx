@@ -223,7 +223,7 @@ function PaymentContent() {
       }
 
       const checkout = new window.Razorpay({
-        key: orderData.payment.keyId,
+        key: orderData.payment.keyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "",
         amount: orderData.payment.amountPaise,
         currency: orderData.payment.currency,
         name: "TOGETHER",
@@ -235,6 +235,10 @@ function PaymentContent() {
             setMessage("Verifying payment with Razorpay...");
             setError("");
 
+            if (!response?.razorpay_payment_id) {
+              throw new Error("Payment ID was not returned by checkout.");
+            }
+
             const verifyResponse = await fetch(
               `${apiUrl}/api/purchases/${purchaseId}/verify-payment`,
               {
@@ -244,7 +248,7 @@ function PaymentContent() {
                 },
                 body: JSON.stringify({
                   razorpayPaymentId: response.razorpay_payment_id,
-                  razorpayOrderId: response.razorpay_order_id,
+                  razorpayOrderId: response.razorpay_order_id || orderData.orderId,
                   razorpaySignature: response.razorpay_signature,
                 }),
               },
