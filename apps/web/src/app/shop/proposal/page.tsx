@@ -9,9 +9,14 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 type Member = {
   id: string;
-  name: string;
-  email: string;
+  name?: string;
+  email?: string;
   role: "OWNER" | "MEMBER";
+  user?: {
+    id: string;
+    name: string;
+    email: string;
+  };
 };
 
 type Group = {
@@ -381,14 +386,22 @@ function ProposalContent() {
                         Members involved
                       </p>
                       <div className="mt-2 flex flex-wrap gap-2">
-                        {selectedGroup.members.map((member) => (
-                          <span
-                            key={member.id}
-                            className="rounded-full border border-black/10 bg-white px-3 py-1 text-xs font-medium text-black/75"
-                          >
-                            {member.name} {member.role === "OWNER" && "(Owner)"}
-                          </span>
-                        ))}
+                        {selectedGroup.members.map((member) => {
+                          const displayName =
+                            member.user?.name ||
+                            member.name ||
+                            member.user?.email ||
+                            member.email ||
+                            "Member";
+                          return (
+                            <span
+                              key={member.id}
+                              className="rounded-full border border-black/10 bg-white px-3 py-1 text-xs font-medium text-black/75"
+                            >
+                              {displayName} {member.role === "OWNER" && "(Owner)"}
+                            </span>
+                          );
+                        })}
                       </div>
                     </div>
                   )}

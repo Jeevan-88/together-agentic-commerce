@@ -68,8 +68,7 @@ html.accessible-mode textarea {
 }
 
 :focus-visible {
-  outline: 2px solid #0f172a;
-  outline-offset: 2px;
+  outline: none;
 }
 
 html.accessible-mode :focus-visible {

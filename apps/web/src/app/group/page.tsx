@@ -9,9 +9,15 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 type Member = {
   id: string;
-  name: string;
-  email: string;
+  userId?: string;
+  name?: string;
+  email?: string;
   role: "OWNER" | "MEMBER";
+  user?: {
+    id: string;
+    name: string;
+    email: string;
+  };
 };
 
 type Group = {
@@ -444,34 +450,51 @@ export default function GroupPage() {
                   </h3>
 
                   <div className="space-y-2.5">
-                    {selectedGroup.members.map((member) => (
-                      <div
-                        key={member.id}
-                        className="flex items-center justify-between rounded-xl border border-black/5 bg-black/[0.02] px-4 py-3"
-                      >
-                        <div>
-                          <p className="text-sm font-medium text-black">
-                            {member.name}
-                          </p>
-                          <p className="text-xs text-black/45">{member.email}</p>
-                        </div>
+                    {selectedGroup.members.map((member) => {
+                      const displayName =
+                        member.user?.name ||
+                        member.name ||
+                        member.user?.email ||
+                        member.email ||
+                        "Group Member";
+                      const displayEmail =
+                        member.user?.email || member.email || "";
+                      const memberIdToRemove =
+                        member.userId || member.user?.id || member.id;
 
-                        {member.role === "OWNER" ? (
-                          <span className="rounded-full bg-black px-2.5 py-0.5 text-[11px] font-semibold text-white">
-                            Owner
-                          </span>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => removeMember(member.id)}
-                            disabled={saving}
-                            className="text-xs font-medium text-red-600 transition hover:text-red-700 disabled:opacity-50"
-                          >
-                            Remove
-                          </button>
-                        )}
-                      </div>
-                    ))}
+                      return (
+                        <div
+                          key={member.id}
+                          className="flex items-center justify-between rounded-xl border border-black/10 bg-white px-4 py-3 shadow-sm"
+                        >
+                          <div>
+                            <p className="text-sm font-bold text-slate-950">
+                              {displayName}
+                            </p>
+                            {displayEmail && (
+                              <p className="text-xs font-medium text-black/50">
+                                {displayEmail}
+                              </p>
+                            )}
+                          </div>
+
+                          {member.role === "OWNER" ? (
+                            <span className="rounded-full bg-black px-2.5 py-0.5 text-[11px] font-bold text-white">
+                              Owner
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => removeMember(memberIdToRemove)}
+                              disabled={saving}
+                              className="text-xs font-semibold text-red-600 transition hover:text-red-700 disabled:opacity-50"
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 

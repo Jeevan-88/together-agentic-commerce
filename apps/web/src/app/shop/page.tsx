@@ -183,7 +183,7 @@ function ShopContent() {
                     if (voiceNotice) setVoiceNotice("");
                   }}
                   placeholder="For example: I need a lightweight backpack for a weekend trip under ₹6,000."
-                  className="w-full resize-none border-0 bg-transparent p-3 text-base text-slate-950 outline-none focus:outline-none focus:ring-0 placeholder:text-black/35"
+                  className="w-full resize-none border-0 bg-transparent p-3 text-base text-slate-950 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 placeholder:text-black/35"
                 />
               </div>
 
