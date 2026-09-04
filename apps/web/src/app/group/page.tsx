@@ -259,16 +259,16 @@ export default function GroupPage() {
           <div className="mb-8">
             <Link
               href="/"
-              className="text-xs font-semibold uppercase tracking-wider text-black/50 transition hover:text-black"
+              className="oval-pill-btn mb-3 border-black/20 bg-white text-[10px] text-black/60 transition hover:border-black hover:text-black"
             >
-              Back to Home
+              &larr; Back to Home
             </Link>
 
-            <h1 className="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl">
+            <h1 className="mt-2 text-4xl font-extrabold tracking-tight sm:text-5xl">
               Shopping groups
             </h1>
 
-            <p className="mt-3 max-w-2xl text-base text-black/60">
+            <p className="mt-2 max-w-2xl text-base text-black/60">
               Create a group, add people you are shopping with, and keep everyone
               connected to the final purchase.
             </p>
@@ -290,10 +290,10 @@ export default function GroupPage() {
             {/* Create Group Form */}
             <section className="surface-card rounded-3xl p-6 sm:p-7">
               <div className="mb-6">
-                <span className="text-xs font-semibold uppercase tracking-[0.15em] text-black/45">
+                <span className="text-xs font-bold uppercase tracking-[0.15em] text-black/45">
                   New Group
                 </span>
-                <h2 className="mt-1 text-xl font-semibold">Start a group</h2>
+                <h2 className="mt-1 text-xl font-bold">Start a group</h2>
                 <p className="mt-1 text-sm text-black/55">
                   Create a new shopping circle where you are the group owner.
                 </p>
@@ -303,7 +303,7 @@ export default function GroupPage() {
                 <div>
                   <label
                     htmlFor="groupName"
-                    className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-black/60"
+                    className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-black/60"
                   >
                     Group name
                   </label>
@@ -319,7 +319,7 @@ export default function GroupPage() {
                 <div>
                   <label
                     htmlFor="userName"
-                    className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-black/60"
+                    className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-black/60"
                   >
                     Your name
                   </label>
@@ -335,7 +335,7 @@ export default function GroupPage() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="w-full rounded-xl bg-black px-4 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-black/80 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="oval-pill-btn w-full border-black bg-black py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition hover:bg-black/80 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {saving ? "Creating group..." : "Create group"}
                 </button>
@@ -430,7 +430,7 @@ export default function GroupPage() {
                 <button
                   type="button"
                   onClick={continueShopping}
-                  className="rounded-xl bg-black px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-black/80"
+                  className="oval-pill-btn border-black bg-black px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition hover:bg-black/80"
                 >
                   Shop with this group &rarr;
                 </button>
@@ -521,7 +521,7 @@ export default function GroupPage() {
                     <button
                       type="submit"
                       disabled={saving}
-                      className="w-full rounded-xl border border-black/20 bg-white px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-black/5 disabled:opacity-50"
+                      className="oval-pill-btn w-full border-black/25 bg-white py-2.5 text-xs font-bold uppercase tracking-wider text-black transition hover:border-black hover:bg-black hover:text-white disabled:opacity-50"
                     >
                       {saving ? "Adding..." : "Add to group"}
                     </button>

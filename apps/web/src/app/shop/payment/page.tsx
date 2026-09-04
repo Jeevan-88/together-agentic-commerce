@@ -1,7 +1,7 @@
-﻿"use client";
+"use client";
 
 import Script from "next/script";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Header from "../../../components/Header";
@@ -38,6 +38,31 @@ function PaymentContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [purchaseDetails, setPurchaseDetails] = useState<{
+    productName?: string;
+    merchantName?: string;
+    totalPaise?: number;
+    mode?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!purchaseId) return;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+    fetch(`${apiUrl}/api/audit/purchases/${purchaseId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.purchase) {
+          const item = data.purchase.items?.[0];
+          setPurchaseDetails({
+            productName: item?.productName,
+            merchantName: item?.merchantName,
+            totalPaise: data.purchase.totalPaise,
+            mode: data.purchase.mode,
+          });
+        }
+      })
+      .catch(() => {});
+  }, [purchaseId]);
 
   async function startPayment() {
     if (!purchaseId) {
@@ -155,7 +180,7 @@ function PaymentContent() {
             </p>
             <Link
               href="/shop"
-              className="mt-6 inline-block rounded-xl bg-black px-5 py-3 text-sm font-semibold text-white"
+              className="oval-pill-btn mt-6 inline-block border-black bg-black px-6 py-3 text-xs font-bold uppercase tracking-wider text-white"
             >
               Start a new purchase
             </Link>
@@ -164,6 +189,10 @@ function PaymentContent() {
       </main>
     );
   }
+
+  const formattedAmount = purchaseDetails?.totalPaise
+    ? `₹${(purchaseDetails.totalPaise / 100).toLocaleString("en-IN")}`
+    : null;
 
   return (
     <>
@@ -176,23 +205,45 @@ function PaymentContent() {
         <div className="mx-auto flex min-h-screen max-w-4xl flex-col px-6 py-6 sm:px-10">
           <Header currentStep="Checkout" />
 
-          <section className="mx-auto w-full max-w-xl py-14 text-center sm:py-20">
+          <section className="mx-auto w-full max-w-xl py-12 text-center sm:py-16">
+            <div className="mb-4 text-left">
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="oval-pill-btn mb-2 border-black/20 bg-white text-[10px] text-black/60 transition hover:border-black hover:text-black"
+              >
+                &larr; Back to Proposal
+              </button>
+            </div>
+
             <div className="surface-card rounded-3xl p-8 shadow-sm sm:p-10">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-black text-white shadow-sm">
-                <span className="text-lg font-bold">₹</span>
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-black text-white shadow-sm">
+                <span className="text-2xl font-extrabold">₹</span>
               </div>
 
-              <span className="mt-5 inline-block text-xs font-semibold uppercase tracking-[0.18em] text-black/45">
+              <span className="mt-5 inline-block text-xs font-bold uppercase tracking-[0.2em] text-black/45">
                 Razorpay Checkout
               </span>
 
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
+              <h1 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">
                 Complete your payment
               </h1>
 
+              {purchaseDetails?.productName && (
+                <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-black/10 bg-black/5 px-4 py-1.5 text-xs">
+                  <span className="font-bold text-slate-950">{purchaseDetails.productName}</span>
+                  {purchaseDetails.merchantName && (
+                    <span className="text-black/50">({purchaseDetails.merchantName})</span>
+                  )}
+                  {formattedAmount && (
+                    <span className="font-bold text-emerald-700">&bull; {formattedAmount}</span>
+                  )}
+                </div>
+              )}
+
               <p className="mt-3 text-sm leading-6 text-black/60">
                 Your purchase has been approved and validated. Click below to launch
-                the Razorpay Test Mode checkout.
+                the Razorpay Test Mode checkout modal.
               </p>
 
               <div className="surface-inset my-6 rounded-2xl p-4 text-left">
@@ -200,6 +251,12 @@ function PaymentContent() {
                   <span>Reference ID</span>
                   <span className="font-mono text-black/75">{purchaseId.slice(0, 18)}...</span>
                 </div>
+                {formattedAmount && (
+                  <div className="mt-2 flex items-center justify-between text-xs text-black/50">
+                    <span>Order Total</span>
+                    <span className="font-bold text-slate-950">{formattedAmount}</span>
+                  </div>
+                )}
                 <div className="mt-2 flex items-center justify-between text-xs text-black/50">
                   <span>Payment Gateway</span>
                   <span className="font-semibold text-black">Razorpay Standard</span>
@@ -207,7 +264,7 @@ function PaymentContent() {
                 <div className="mt-2 flex items-center justify-between text-xs text-black/50">
                   <span>Environment</span>
                   <span className="rounded bg-black/5 px-2 py-0.5 text-[10px] font-semibold uppercase text-black/70">
-                    Test Mode
+                    Test Mode (Simulated)
                   </span>
                 </div>
               </div>
@@ -216,9 +273,9 @@ function PaymentContent() {
                 type="button"
                 onClick={startPayment}
                 disabled={isLoading}
-                className="w-full rounded-xl bg-black py-4 text-sm font-semibold text-white shadow-sm transition hover:bg-black/80 disabled:cursor-not-allowed disabled:opacity-50"
+                className="oval-pill-btn w-full border-black bg-black py-4 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition hover:bg-black/80 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {isLoading ? "Opening Razorpay checkout..." : "Pay securely with Razorpay"}
+                {isLoading ? "Opening Razorpay checkout..." : `Pay ${formattedAmount || ""} securely with Razorpay`}
               </button>
 
               {message && (

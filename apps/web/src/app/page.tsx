@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import Header from "../components/Header";
 
 export default function Home() {
@@ -30,14 +30,14 @@ export default function Home() {
               <div className="mt-10 flex flex-col gap-3 sm:flex-row">
                 <Link
                   href="/shop"
-                  className="rounded-xl bg-black px-6 py-3.5 text-center text-sm font-medium text-white shadow-sm transition hover:bg-black/80"
+                  className="oval-pill-btn border-black bg-black px-8 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-white shadow-sm transition hover:bg-black/80"
                 >
-                  Start shopping
+                  Start shopping &rarr;
                 </Link>
 
                 <Link
                   href="/group"
-                  className="rounded-xl border border-black/15 bg-white px-6 py-3.5 text-center text-sm font-medium text-slate-900 shadow-sm transition hover:bg-black/5"
+                  className="oval-pill-btn border-black/20 bg-white px-8 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-slate-900 shadow-sm transition hover:border-black"
                 >
                   Create a group
                 </Link>
@@ -117,9 +117,9 @@ export default function Home() {
 
               <Link
                 href="/shop?mode=group"
-                className="mt-6 block w-full rounded-xl bg-black py-3.5 text-center text-sm font-medium text-white transition hover:bg-black/80"
+                className="oval-pill-btn mt-6 block w-full border-black bg-black py-3.5 text-center text-xs font-bold uppercase tracking-wider text-white transition hover:bg-black/80"
               >
-                Try group shopping
+                Try group shopping &rarr;
               </Link>
             </div>
           </div>

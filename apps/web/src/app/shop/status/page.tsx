@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
@@ -386,12 +386,18 @@ function StatusContent() {
             </div>
           </div>
 
-          <div className="mt-8 text-center">
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
               href="/shop"
-              className="rounded-xl border border-black/15 bg-white px-6 py-3 text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-black/5"
+              className="oval-pill-btn border-black bg-black px-8 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition hover:bg-black/80"
             >
               Start another purchase
+            </Link>
+            <Link
+              href="/group"
+              className="oval-pill-btn border-black/20 bg-white px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-black transition hover:border-black"
+            >
+              View groups
             </Link>
           </div>
         </section>
