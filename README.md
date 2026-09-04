@@ -10,11 +10,15 @@
 
 ## 🎬 Project Walkthrough & Live Demo Video
 
-[![TOGETHER - 10-Minute End-to-End Walkthrough Demo](docs/images/video-walkthrough-banner.png)](https://together-web-kohl.vercel.app)
+[![TOGETHER - 10-Minute End-to-End Walkthrough Demo](docs/images/video-walkthrough-banner.png)](https://together-web-kohl.vercel.app/)
 
 <div align="center">
 
-[![Live Demo](https://img.shields.io/badge/Live_Website-together--web--kohl.vercel.app-blue?style=for-the-badge&logo=vercel)](https://together-web-kohl.vercel.app)
+### 🌐 Live Website: [https://together-web-kohl.vercel.app/](https://together-web-kohl.vercel.app/)
+
+> **Experience the live deployment:** Agentic Discovery • Side-by-Side Comparison • Group Consensus • Razorpay Test Mode Checkout
+
+[![Live Demo](https://img.shields.io/badge/Live_Website-together--web--kohl.vercel.app-blue?style=for-the-badge&logo=vercel)](https://together-web-kohl.vercel.app/)
 [![API Status](https://img.shields.io/badge/Production_API-together--api--rho.vercel.app-green?style=for-the-badge&logo=node.js)](https://together-api-rho.vercel.app)
 [![Database](https://img.shields.io/badge/PostgreSQL-Neon_Cloud-336791?style=for-the-badge&logo=postgresql)](https://together-api-rho.vercel.app)
 [![Payments](https://img.shields.io/badge/Razorpay-Test_Mode_Verified-02042B?style=for-the-badge&logo=razorpay)](https://together-web-kohl.vercel.app/shop/payment)
